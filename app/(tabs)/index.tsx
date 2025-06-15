@@ -3,6 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, Alert, Animated, SafeAreaView
 import { Audio } from 'expo-av';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -96,6 +98,97 @@ const FloatingParticle = ({ delay, emoji }) => {
   );
 };
 
+// Yükleme Ekranı
+const LoadingScreen = ({ onLoadingComplete }) => {
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    // İlk animasyonlar
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Progress bar animasyonu
+    const progressAnimation = Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 3000,
+      useNativeDriver: false,
+    });
+
+    progressAnimation.start(() => {
+      // Yükleme tamamlandığında ana menüye geç
+      setTimeout(() => {
+        onLoadingComplete();
+      }, 500);
+    });
+
+    return () => {
+      progressAnimation.stop();
+    };
+  }, []);
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  return (
+    <View style={styles.loadingContainer}>
+      <ExpoLinearGradient
+        colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
+        style={styles.loadingBackground}
+      >
+        {/* Arka Plan Bulutları */}
+        <View style={styles.cloudsContainer}>
+          <Text style={styles.cloud}>☁️</Text>
+          <Text style={[styles.cloud, styles.cloud2]}>☁️</Text>
+          <Text style={[styles.cloud, styles.cloud3]}>☁️</Text>
+        </View>
+
+        <Animated.View style={[
+          styles.loadingContent,
+          { 
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}>
+          {/* Sadece Uygulama İkonu */}
+          <View style={styles.iconContainer}>
+        <Image
+              source={require('../../assets/images/icon.png')}
+              style={styles.loadingIcon}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Progress Bar Container */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBarBackground}>
+              <Animated.View 
+                style={[
+                  styles.progressBar,
+                  { width: progressWidth }
+                ]}
+              />
+            </View>
+          </View>
+        </Animated.View>
+      </ExpoLinearGradient>
+    </View>
+  );
+};
+
 // Ayarlar Sayfası
 const SettingsScreen = ({ 
   onBack, 
@@ -105,41 +198,29 @@ const SettingsScreen = ({
   setSoundEnabled,
   hapticEnabled,
   setHapticEnabled,
-  difficulty,
-  setDifficulty,
-  theme,
-  setTheme
+  buttonSound
 }) => {
   const slideAnim = useRef(new Animated.Value(width)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Ana menü için ses fonksiyonu
+  // Ayarlar sayfası için ses fonksiyonu
   const playSound = async (type) => {
-    if (!musicEnabled || !soundEnabled) return;
-    
     try {
       if (type === 'button') {
-        if (hapticEnabled) {
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Buton ses efekti çal
+        if (soundEnabled && buttonSound) {
+          await buttonSound.replayAsync();
+          console.log('🔊 Ayarlar buton ses efekti çalındı');
         }
         
-        // Basit beep sesi
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
+        // Haptic feedback
+        if (hapticEnabled) {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          console.log('📳 Ayarlar buton haptic feedback');
+        }
       }
     } catch (error) {
-      console.log('Ses/Haptic feedback çalınamadı:', error);
+      console.log('Ayarlar ses/haptic feedback çalınamadı:', error);
     }
   };
 
@@ -261,74 +342,6 @@ const SettingsScreen = ({
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Zorluk Ayarları */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.sectionTitle}>🎯 ZORLUK SEVİYESİ</Text>
-              
-              <View style={styles.difficultyContainer}>
-                {[
-                  { key: 'easy', label: '😊 KOLAY', desc: 'Daha fazla bonus tur' },
-                  { key: 'normal', label: '😐 NORMAL', desc: 'Standart oyun' },
-                  { key: 'hard', label: '😤 ZOR', desc: 'Daha az süre' }
-                ].map((diff) => (
-                  <TouchableOpacity 
-                    key={diff.key}
-                    style={[styles.difficultyButton, difficulty === diff.key && styles.difficultyButtonActive]}
-                    onPress={() => {
-                      playSound('button');
-                      setDifficulty(diff.key);
-                    }}
-                  >
-                    <ExpoLinearGradient
-                      colors={difficulty === diff.key ? 
-                        ['#FF4757', '#FF3742', '#FF6B7A'] : 
-                        ['rgba(255,255,255,0.8)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0.8)']
-                      }
-                      style={styles.difficultyButtonGradient}
-                    >
-                      <Text style={[styles.difficultyLabel, difficulty === diff.key && styles.difficultyLabelActive]}>
-                        {diff.label}
-                      </Text>
-                      <Text style={[styles.difficultyDesc, difficulty === diff.key && styles.difficultyDescActive]}>
-                        {diff.desc}
-                      </Text>
-                    </ExpoLinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Tema Ayarları */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.sectionTitle}>🎨 TEMA</Text>
-              
-              <View style={styles.themeContainer}>
-                {[
-                  { key: 'sky', label: '☁️ GÖKYÜZÜ', colors: ['#87CEEB', '#98D8E8'] },
-                  { key: 'dark', label: '🌙 GECE', colors: ['#2C3E50', '#34495E'] },
-                  { key: 'colorful', label: '🌈 RENKLİ', colors: ['#FF6B6B', '#4ECDC4'] }
-                ].map((themeOption) => (
-                  <TouchableOpacity 
-                    key={themeOption.key}
-                    style={[styles.themeButton, theme === themeOption.key && styles.themeButtonActive]}
-                    onPress={() => {
-                      playSound('button');
-                      setTheme(themeOption.key);
-                    }}
-                  >
-                    <ExpoLinearGradient
-                      colors={themeOption.colors}
-                      style={styles.themeButtonGradient}
-                    >
-                      <Text style={[styles.themeLabel, theme === themeOption.key && styles.themeLabelActive]}>
-                        {themeOption.label}
-                      </Text>
-                    </ExpoLinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
           </View>
 
           <TouchableOpacity 
@@ -353,19 +366,19 @@ const SettingsScreen = ({
 
 // Nasıl Oynanır Sayfası
 const HowToPlayScreen = ({ onBack }) => {
-  const slideAnim = useRef(new Animated.Value(width)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        friction: 8,
-        useNativeDriver: true,
-      }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
         useNativeDriver: true,
       }),
     ]).start();
@@ -373,13 +386,13 @@ const HowToPlayScreen = ({ onBack }) => {
 
   const handleBack = () => {
     Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: width,
+      Animated.timing(fadeAnim, {
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
         duration: 300,
         useNativeDriver: true,
       }),
@@ -389,22 +402,52 @@ const HowToPlayScreen = ({ onBack }) => {
      return (
      <View style={styles.howToPlayContainer}>
        <ExpoLinearGradient
-         colors={['#1a1a2e', '#16213e', '#0f3460']}
+         colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
          style={styles.howToPlayGradient}
        >
-        <Animated.View style={[
-          styles.howToPlayContent,
-          { 
-            transform: [{ translateX: slideAnim }],
-            opacity: fadeAnim,
-          }
-        ]}>
-          <View style={styles.howToPlayHeader}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-              <Text style={styles.backButtonText}>← GERİ</Text>
-            </TouchableOpacity>
-            <Text style={styles.howToPlayTitle}>🎓 NASIL OYNANIR?</Text>
-          </View>
+         {/* Bulut efektleri */}
+         <View style={styles.cloudsContainer}>
+           <Text style={[styles.cloud, { top: 80, left: 30 }]}>☁️</Text>
+           <Text style={[styles.cloud, styles.cloud2]}>☁️</Text>
+           <Text style={[styles.cloud, styles.cloud3]}>☁️</Text>
+         </View>
+
+         {/* Üst Header - Geri Butonu */}
+         <View style={styles.howToPlayTopHeader}>
+           <TouchableOpacity 
+             style={styles.howToPlayBackButton} 
+             onPress={() => {
+               console.log('Geri butonu basıldı!');
+               handleBack();
+             }}
+             activeOpacity={0.7}
+           >
+             <ExpoLinearGradient
+               colors={['#FF6B35', '#F7931E', '#FFD700']}
+               style={styles.howToPlayBackButtonGradient}
+             >
+               <Text style={styles.howToPlayBackButtonText}>← GERİ</Text>
+             </ExpoLinearGradient>
+           </TouchableOpacity>
+           <Text style={styles.howToPlayHeaderTitle}>📚 NASIL OYNANIR?</Text>
+           <View style={styles.headerSpacer} />
+         </View>
+
+        <View style={styles.howToPlayContent}>
+
+
+          {/* Scrollable Content */}
+          <Animated.ScrollView 
+            style={[
+              styles.scrollContent,
+              { 
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+          >
 
           <View style={styles.rulesContainer}>
             {[
@@ -420,12 +463,7 @@ const HowToPlayScreen = ({ onBack }) => {
                   styles.ruleItem,
                   { 
                     opacity: fadeAnim,
-                    transform: [{ 
-                      translateX: slideAnim.interpolate({
-                        inputRange: [0, width],
-                        outputRange: [0, 100],
-                      })
-                    }]
+                    transform: [{ scale: scaleAnim }]
                   }
                 ]}
               >
@@ -447,55 +485,39 @@ const HowToPlayScreen = ({ onBack }) => {
             <Text style={styles.exampleResult}>Doğru Sıralama: 3 → 7 → 15 → 28</Text>
           </View>
 
-          <TouchableOpacity style={styles.startFromHowToButton} onPress={handleBack}>
-            <ExpoLinearGradient
-              colors={['#ff6b6b', '#ff8e8e', '#ff6b6b']}
-              style={styles.startButtonGradient}
-            >
-              <Text style={styles.startFromHowToButtonText}>🚀 HADI OYNAYALIM!</Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
-                 </Animated.View>
+
+          </Animated.ScrollView>
+        </View>
        </ExpoLinearGradient>
      </View>
   );
 };
 
 // Profesyonel Oyun Menüsü
-const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggleMusic }) => {
+const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled }) => {
   const titleBounce = useRef(new Animated.Value(1)).current;
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const characterBounce = useRef(new Animated.Value(1)).current;
   const sparkleRotate = useRef(new Animated.Value(0)).current;
 
-  // Ana menü için ses fonksiyonu - Haptic feedback + Basit ses
+  // Ana menü için ses fonksiyonu - Gerçek ses efektleri + Haptic feedback
   const playSound = async (type) => {
-    if (!musicEnabled) return;
-    
     try {
       if (type === 'button') {
+        // Buton ses efekti çal
+        if (soundEnabled && buttonSound) {
+          await buttonSound.replayAsync();
+          console.log('🔊 Ana menü buton ses efekti çalındı');
+        }
+        
         // Haptic feedback
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        
-        // Basit beep sesi
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
-        
-        console.log('🔊 Buton ses + haptic feedback çalındı');
+        if (hapticEnabled) {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          console.log('📳 Ana menü buton haptic feedback');
+        }
       }
     } catch (error) {
-      console.log('Ses/Haptic feedback çalınamadı:', error);
+      console.log('Ana menü ses/haptic feedback çalınamadı:', error);
     }
   };
 
@@ -625,8 +647,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
                colors={['#FF6B35', '#F7931E', '#FFD700']}
                style={styles.titleBackground}
              >
-               <Text style={styles.gameTitle}>SAYI</Text>
-               <Text style={styles.gameTitle}>SIRALAMA</Text>
+               <Text style={styles.gameTitle}>ORDIX</Text>
              </ExpoLinearGradient>
            </Animated.View>
 
@@ -666,22 +687,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
                 </ExpoLinearGradient>
               </TouchableOpacity>
 
-              {/* NASIL OYNANIR Butonu */}
-              <TouchableOpacity 
-                style={styles.howToPlayButton} 
-                onPress={() => {
-                  playSound('button');
-                  onHowToPlay();
-                }}
-              >
-                <ExpoLinearGradient
-                  colors={['#5DADE2', '#3498DB', '#7FB3D3']}
-                  style={styles.howToPlayGradient}
-                >
-                  <View style={styles.buttonShadow} />
-                  <Text style={styles.howToPlayButtonText}>📚 NASIL OYNANIR</Text>
-                </ExpoLinearGradient>
-              </TouchableOpacity>
+
 
               {/* AYARLAR Butonu */}
               <TouchableOpacity 
@@ -717,13 +723,16 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
              
              <TouchableOpacity 
                style={styles.bottomIcon}
-               onPress={() => playSound('button')}
+               onPress={() => {
+                 playSound('button');
+                 onHowToPlay();
+               }}
              >
                <ExpoLinearGradient
-                 colors={['#9B59B6', '#8E44AD', '#BB8FCE']}
+                 colors={['#FFB347', '#FF8C00', '#FFA500']}
                  style={styles.bottomIconGradient}
                >
-                 <Text style={styles.bottomIconText}>📊</Text>
+                 <Text style={styles.bottomIconText}>📚</Text>
                </ExpoLinearGradient>
              </TouchableOpacity>
              
@@ -739,6 +748,11 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
                </ExpoLinearGradient>
              </TouchableOpacity>
            </View>
+
+           {/* Versiyon Bilgisi */}
+           <View style={styles.versionContainer}>
+             <Text style={styles.versionText}>Versiyon Beta</Text>
+           </View>
          </View>
        </ExpoLinearGradient>
      </View>
@@ -746,7 +760,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
 };
 
 export default function GameScreen() {
-  const [currentScreen, setCurrentScreen] = useState('menu');
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'loading', 'menu', 'game', 'howToPlay', 'settings'
   const [numberList, setNumberList] = useState([]);
   const [numbersToPlace, setNumbersToPlace] = useState([]);
   const [currentNumber, setCurrentNumber] = useState(null);
@@ -755,102 +769,108 @@ export default function GameScreen() {
   const [wronglyPlaced, setWronglyPlaced] = useState(null);
   const [gameCount, setGameCount] = useState(0);
   const [isEasyRound, setIsEasyRound] = useState(false);
-  const [sound, setSound] = useState(null);
+  const [backgroundMusic, setBackgroundMusic] = useState(null);
+  const [buttonSound, setButtonSound] = useState(null);
   const [musicEnabled, setMusicEnabled] = useState(true);
   
   // Ayarlar state'leri
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [hapticEnabled, setHapticEnabled] = useState(true);
-  const [difficulty, setDifficulty] = useState('normal'); // 'easy', 'normal', 'hard'
-  const [theme, setTheme] = useState('sky'); // 'sky', 'dark', 'colorful'
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    loadMusic();
+    loadSounds();
     return () => {
-      if (sound) {
-        sound.unloadAsync();
+      if (backgroundMusic) {
+        backgroundMusic.unloadAsync();
+      }
+      if (buttonSound) {
+        buttonSound.unloadAsync();
       }
     };
   }, []);
 
-  const loadMusic = async () => {
+  const loadSounds = async () => {
     try {
-      console.log('Müzik sistemi hazır');
+      console.log('🎵 Ses dosyaları yükleniyor...');
+      
+      // Arka plan müziği yükle
+      const { sound: bgMusic } = await Audio.Sound.createAsync(
+        require('../../assets/music/start.mp3'),
+        { 
+          isLooping: true,
+          volume: 0.3,
+        }
+      );
+      setBackgroundMusic(bgMusic);
+      
+      // Buton ses efekti yükle
+      const { sound: btnSound } = await Audio.Sound.createAsync(
+        require('../../assets/music/buton_efect.mp3'),
+        { 
+          volume: 0.5,
+        }
+      );
+      setButtonSound(btnSound);
+      
+      console.log('✅ Ses dosyaları başarıyla yüklendi');
+      
+      // Müzik açıksa arka plan müziğini başlat
+      if (musicEnabled) {
+        await bgMusic.playAsync();
+        console.log('🎵 Arka plan müziği başlatıldı');
+      }
+      
     } catch (error) {
-      console.log('Müzik yüklenemedi:', error);
+      console.log('❌ Ses dosyaları yüklenemedi:', error);
     }
   };
 
-  const toggleMusic = () => {
-    setMusicEnabled(!musicEnabled);
-  };
-
-  // Oyun ekranı için ses fonksiyonu - Haptic feedback + Ses efektleri
-  const playSound = async (type) => {
-    if (!musicEnabled) return;
+  const toggleMusic = async () => {
+    const newMusicState = !musicEnabled;
+    setMusicEnabled(newMusicState);
     
     try {
+      if (backgroundMusic) {
+        if (newMusicState) {
+          await backgroundMusic.playAsync();
+          console.log('🎵 Arka plan müziği açıldı');
+        } else {
+          await backgroundMusic.pauseAsync();
+          console.log('🔇 Arka plan müziği kapatıldı');
+        }
+      }
+    } catch (error) {
+      console.log('Müzik toggle hatası:', error);
+    }
+  };
+
+  // Oyun ekranı için ses fonksiyonu - Gerçek ses efektleri + Haptic feedback
+  const playSound = async (type) => {
+    try {
       if (type === 'button') {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Buton ses efekti çal
+        if (soundEnabled && buttonSound) {
+          await buttonSound.replayAsync();
+          console.log('🔊 Buton ses efekti çalındı');
+        }
         
-        // Buton ses efekti
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
-        
-        console.log('🔊 Buton ses + haptic feedback');
+        // Haptic feedback
+        if (hapticEnabled) {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          console.log('📳 Buton haptic feedback');
+        }
       } else if (type === 'correct') {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Başarı ses efekti (yükselen ton)
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-        oscillator.frequency.exponentialRampToValueAtTime(784, audioContext.currentTime + 0.2); // G5
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-        
-        console.log('✅ Doğru yerleştirme ses + haptic feedback');
+        if (hapticEnabled) {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          console.log('✅ Doğru yerleştirme haptic feedback');
+        }
       } else if (type === 'wrong') {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        
-        // Hata ses efekti (düşen ton)
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.4);
-        
-        console.log('❌ Yanlış yerleştirme ses + haptic feedback');
+        if (hapticEnabled) {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          console.log('❌ Yanlış yerleştirme haptic feedback');
+        }
       }
     } catch (error) {
       console.log('Ses/Haptic feedback çalınamadı:', error);
@@ -961,6 +981,9 @@ export default function GameScreen() {
       return;
     }
 
+    // Slot'a sayı yerleştirme ses efekti
+    playSound('button');
+    
     console.log('✅ Sayı yerleştiriliyor:', currentNumber, 'slot:', slotIndex);
 
     const newList = [...numberList];
@@ -1063,6 +1086,10 @@ export default function GameScreen() {
     return positions;
   };
 
+  if (currentScreen === 'loading') {
+    return <LoadingScreen onLoadingComplete={() => setCurrentScreen('menu')} />;
+  }
+
   if (currentScreen === 'howToPlay') {
     return <HowToPlayScreen onBack={backToMenu} />;
   }
@@ -1075,12 +1102,11 @@ export default function GameScreen() {
         onSettings={showSettings}
         musicEnabled={musicEnabled}
         onToggleMusic={toggleMusic}
+        buttonSound={buttonSound}
+        soundEnabled={soundEnabled}
+        hapticEnabled={hapticEnabled}
       />
     );
-  }
-
-  if (currentScreen === 'howToPlay') {
-    return <HowToPlayScreen onBack={backToMenu} />;
   }
 
   if (currentScreen === 'settings') {
@@ -1093,10 +1119,7 @@ export default function GameScreen() {
         setSoundEnabled={setSoundEnabled}
         hapticEnabled={hapticEnabled}
         setHapticEnabled={setHapticEnabled}
-        difficulty={difficulty}
-        setDifficulty={setDifficulty}
-        theme={theme}
-        setTheme={setTheme}
+        buttonSound={buttonSound}
       />
     );
   }
@@ -1304,13 +1327,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 100,
-    paddingBottom: 50,
+    paddingTop: 60,
+    paddingBottom: 30,
     zIndex: 3,
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   titleBackground: {
     paddingHorizontal: 40,
@@ -1344,7 +1367,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   characterContainer: {
-    marginBottom: 40,
+    marginBottom: 25,
     alignItems: 'center',
   },
   numbersRow: {
@@ -1362,7 +1385,7 @@ const styles = StyleSheet.create({
   mainButtonsContainer: {
     alignItems: 'center',
     width: '100%',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   playButton: {
     borderRadius: 30,
@@ -1406,9 +1429,9 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     overflow: 'hidden',
     width: '75%',
-    shadowColor: '#3498DB',
+    shadowColor: '#FF8C00',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 10,
   },
@@ -1476,6 +1499,125 @@ const styles = StyleSheet.create({
   bottomIconText: {
     fontSize: 24,
   },
+  versionContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  versionText: {
+    fontSize: 12,
+    color: 'rgba(0, 0, 0, 0.14)',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.58)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+
+  // Yükleme Ekranı Stilleri
+  loadingContainer: {
+    flex: 1,
+  },
+  loadingBackground: {
+    flex: 1,
+    position: 'relative',
+  },
+  loadingContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    zIndex: 3,
+  },
+  iconContainer: {
+    marginBottom: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  loadingIcon: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+  },
+  loadingTitleBackground: {
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+    marginBottom: 15,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  loadingTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  loadingSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    marginBottom: 50,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  progressContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  progressBarBackground: {
+    width: '90%',
+    height: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 6,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  loadingVersion: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '400',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
 
   // Nasıl Oynanır Sayfası - Mobil Uyumlu
   howToPlayContainer: {
@@ -1483,51 +1625,140 @@ const styles = StyleSheet.create({
   },
   howToPlayGradient: {
     flex: 1,
+    position: 'relative',
   },
   howToPlayContent: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
+    zIndex: 3,
   },
   howToPlayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 20,
-    marginBottom: 20,
+    paddingTop: 10,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'space-between',
+  },
+  howToPlayTopHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    zIndex: 1000,
+  },
+  howToPlayBackButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  howToPlayBackButtonGradient: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  howToPlayBackButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  howToPlayHeaderTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF8C00',
+    textShadowColor: '#FFFFFF',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerSpacer: {
+    width: 80, // Geri buton ile aynı genişlik
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: 40,
+  },
+  howToPlayTitleContainer: {
+    alignItems: 'center',
+  },
+  howToPlayTitleBackground: {
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#FF8C00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   howToPlayTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffd700',
-    flex: 1,
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginRight: 60,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   rulesContainer: {
-    flex: 1,
     marginBottom: 15,
   },
   ruleItem: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 15,
     padding: 15,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#ffd700',
+    borderLeftColor: '#FFB347',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   ruleIconContainer: {
-    width: 45,
-    height: 45,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 179, 71, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
-    borderWidth: 1,
-    borderColor: '#ffd700',
+    borderWidth: 2,
+    borderColor: '#FFB347',
+    shadowColor: '#FF8C00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   ruleIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   ruleContent: {
     flex: 1,
@@ -1536,65 +1767,54 @@ const styles = StyleSheet.create({
   ruleTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#00ff88',
+    color: '#FF8C00',
     marginBottom: 5,
   },
   ruleText: {
     fontSize: 12,
-    color: '#ffffff',
+    color: '#333333',
     lineHeight: 16,
-    opacity: 0.9,
+    opacity: 1,
   },
   exampleContainer: {
-    backgroundColor: 'rgba(0, 255, 136, 0.15)',
+    backgroundColor: 'rgba(255, 179, 71, 0.8)',
     borderRadius: 15,
     padding: 15,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#00ff88',
+    borderColor: '#FFB347',
     alignItems: 'center',
+    shadowColor: '#FF8C00',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
   },
   exampleTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#00ff88',
+    color: '#FF8C00',
     marginBottom: 10,
   },
   exampleText: {
     fontSize: 13,
-    color: '#ffffff',
+    color: '#333333',
     marginBottom: 8,
     textAlign: 'center',
+    opacity: 1,
   },
   exampleArrow: {
     fontSize: 18,
     marginVertical: 5,
+    color: '#FF8C00',
   },
   exampleResult: {
     fontSize: 13,
-    color: '#ffd700',
+    color: '#FF6B35',
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  startFromHowToButton: {
-    borderRadius: 25,
-    overflow: 'hidden',
-    alignSelf: 'center',
-    marginBottom: 20,
-    width: '80%',
-  },
-  startButtonGradient: {
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    alignItems: 'center',
-    borderRadius: 25,
-  },
-  startFromHowToButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    textAlign: 'center',
-  },
+
 
   // Oyun Ekranı - Ana Menü Teması
   container: {
@@ -1998,80 +2218,7 @@ const styles = StyleSheet.create({
   toggleTextActive: {
     color: '#FFFFFF',
   },
-  difficultyContainer: {
-    gap: 10,
-  },
-  difficultyButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  difficultyButtonActive: {
-    shadowColor: '#FF4757',
-    shadowOpacity: 0.3,
-  },
-  difficultyButtonGradient: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 12,
-  },
-  difficultyLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    textAlign: 'center',
-  },
-  difficultyLabelActive: {
-    color: '#FFFFFF',
-  },
-  difficultyDesc: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  difficultyDescActive: {
-    color: 'rgba(255,255,255,0.8)',
-  },
-  themeContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'space-between',
-  },
-  themeButton: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  themeButtonActive: {
-    shadowOpacity: 0.3,
-  },
-  themeButtonGradient: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  themeLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  themeLabelActive: {
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
+
   saveSettingsButton: {
     borderRadius: 20,
     overflow: 'hidden',
