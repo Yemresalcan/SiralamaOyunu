@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Animated, SafeAreaView, Dimensions, LinearGradient } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, SafeAreaView, Dimensions, LinearGradient, Platform, PixelRatio } from 'react-native';
 import { Audio } from 'expo-av';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -7,6 +7,74 @@ import { Image } from 'expo-image';
 
 
 const { width, height } = Dimensions.get('window');
+
+// Platform ve ekran yoğunluğu kontrolü
+const isAndroid = Platform.OS === 'android';
+const isIOS = Platform.OS === 'ios';
+const pixelRatio = PixelRatio.get();
+const screenScale = PixelRatio.getFontScale();
+
+// Android için özel ekran kategorileri
+const screenDensity = {
+  ldpi: pixelRatio <= 0.75,    // 120 dpi
+  mdpi: pixelRatio <= 1,       // 160 dpi  
+  hdpi: pixelRatio <= 1.5,     // 240 dpi
+  xhdpi: pixelRatio <= 2,      // 320 dpi
+  xxhdpi: pixelRatio <= 3,     // 480 dpi
+  xxxhdpi: pixelRatio > 3      // 640 dpi
+};
+
+// Responsive boyutlar - Android ve iOS için optimize
+const isSmallScreen = height < 700;
+const isMediumScreen = height >= 700 && height < 900;
+const isLargeScreen = height >= 900;
+
+// Android için ek boyut ayarlamaları - Büyük ekranlar için özel
+const isLargeAndroidScreen = isAndroid && (width > 400 || height > 700);
+const isJ7PrimeSize = isAndroid && (width >= 360 && width <= 410) && (height >= 640 && height <= 740);
+const isJ6PrimeSize = isAndroid && (width >= 350 && width <= 390) && (height >= 620 && height <= 700);
+const isSamsungMidRange = isAndroid && (width >= 350 && width <= 420) && (height >= 620 && height <= 750);
+
+const androidMultiplier = isAndroid ? 
+  (isJ6PrimeSize ? 0.75 : // J6+ Prime için daha fazla küçültme
+   isJ7PrimeSize ? 0.8 : // J7 Prime için küçültme
+   isSamsungMidRange ? 0.82 : // Samsung orta segment için küçültme
+   isLargeAndroidScreen ? 0.88 : // Büyük Android ekranlar için küçültme
+   pixelRatio > 2.5 ? 0.95 : // Yüksek yoğunluk için küçültme
+   pixelRatio < 1.5 ? 0.9 : 0.92) : 1;
+
+const iosMultiplier = isIOS ? (height > 800 ? 1.05 : height < 700 ? 0.95 : 1) : 1;
+const platformMultiplier = isAndroid ? androidMultiplier : iosMultiplier;
+
+// Dinamik boyutlar - Platform optimizasyonlu
+const responsiveSize = {
+  // Font boyutları - Android için daha büyük
+  titleFont: Math.round((isSmallScreen ? 22 : isMediumScreen ? 26 : 30) * platformMultiplier * screenScale),
+  subtitleFont: Math.round((isSmallScreen ? 14 : isMediumScreen ? 16 : 18) * platformMultiplier * screenScale),
+  buttonFont: Math.round((isSmallScreen ? 18 : isMediumScreen ? 22 : 26) * platformMultiplier * screenScale),
+  textFont: Math.round((isSmallScreen ? 12 : isMediumScreen ? 14 : 16) * platformMultiplier * screenScale),
+  
+  // Padding ve margin - Android için daha geniş
+  containerPadding: Math.round((isSmallScreen ? 15 : isMediumScreen ? 20 : 25) * platformMultiplier),
+  buttonPadding: Math.round((isSmallScreen ? 12 : isMediumScreen ? 15 : 18) * platformMultiplier),
+  itemMargin: Math.round((isSmallScreen ? 8 : isMediumScreen ? 12 : 15) * platformMultiplier),
+  
+  // Buton boyutları - Android için daha yüksek
+  buttonHeight: Math.round((isSmallScreen ? 45 : isMediumScreen ? 55 : 65) * platformMultiplier),
+  iconSize: Math.round((isSmallScreen ? 30 : isMediumScreen ? 35 : 40) * platformMultiplier),
+  
+  // Header boyutları - Android status bar için daha fazla
+  headerPadding: Math.round((isSmallScreen ? 35 : isMediumScreen ? 45 : 55) * platformMultiplier) + (isAndroid ? 10 : 0),
+  
+  // Android özel ayarlar
+  elevation: isAndroid ? 8 : 0,
+  shadowOpacity: isAndroid ? 0.3 : 0.4,
+  borderRadius: Math.round((isAndroid ? 12 : 10) * platformMultiplier),
+  
+  // Büyük Android ekranlar için özel boyutlar
+  maxButtonWidth: isJ6PrimeSize ? '70%' : isJ7PrimeSize ? '72%' : isSamsungMidRange ? '74%' : isLargeAndroidScreen ? '78%' : '85%',
+  maxIconSize: isJ6PrimeSize ? 24 : isJ7PrimeSize ? 26 : isSamsungMidRange ? 28 : isLargeAndroidScreen ? 30 : 35,
+};
 
 // Fisher-Yates shuffle algoritması
 const shuffleArray = (array) => {
@@ -365,6 +433,146 @@ const SettingsScreen = ({
 };
 
 // Nasıl Oynanır Sayfası
+const GameOverScreen = ({ score, onRestart, onBackToMenu }) => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Giriş animasyonu
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Sürekli bounce animasyonu
+    const bounceAnimation = () => {
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start(() => bounceAnimation());
+    };
+    bounceAnimation();
+  }, []);
+
+  const bounceInterpolate = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.1],
+  });
+
+  return (
+    <View style={styles.gameOverContainer}>
+      <ExpoLinearGradient
+        colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
+        style={styles.gameOverBackground}
+      >
+        {/* Arka plan bulutları */}
+        <Text style={[styles.cloud, styles.gameOverCloud1]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud2]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud3]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud4]}>☁️</Text>
+
+        <Animated.View 
+          style={[
+            styles.gameOverContent,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          {/* Ana başlık */}
+          <Animated.View 
+            style={[
+              styles.gameOverTitleContainer,
+              { transform: [{ scale: bounceInterpolate }] }
+            ]}
+          >
+            <ExpoLinearGradient
+              colors={['#FF6B35', '#F7931E', '#FFD700']}
+              style={styles.gameOverTitleBackground}
+            >
+              <Text style={styles.gameOverTitle}>💥 OYUN BİTTİ! 💥</Text>
+            </ExpoLinearGradient>
+          </Animated.View>
+
+          {/* Açıklama */}
+          <View style={styles.gameOverMessageContainer}>
+            <Text style={styles.gameOverMessage}>
+              Yanlış yerleştirdiniz! 😔{'\n'}
+              Sayılar küçükten büyüğe sıralanmalı
+            </Text>
+          </View>
+
+          {/* Skor */}
+          <View style={styles.gameOverScoreContainer}>
+            <ExpoLinearGradient
+              colors={['#FFD700', '#FFA500', '#FF8C00']}
+              style={styles.gameOverScoreBackground}
+            >
+              <Text style={styles.gameOverScoreLabel}>📊 SKORUNUZ</Text>
+              <Text style={styles.gameOverScoreValue}>{score}</Text>
+            </ExpoLinearGradient>
+          </View>
+
+          {/* Butonlar */}
+          <View style={styles.gameOverButtonContainer}>
+            <TouchableOpacity 
+              style={styles.gameOverButton}
+              onPress={onRestart}
+              activeOpacity={0.8}
+            >
+              <ExpoLinearGradient
+                colors={['#58D68D', '#27AE60', '#7DCEA0']}
+                style={styles.gameOverButtonGradient}
+              >
+                <Text style={styles.gameOverButtonText}>🔄 TEKRAR DENE</Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.gameOverButton}
+              onPress={onBackToMenu}
+              activeOpacity={0.8}
+            >
+              <ExpoLinearGradient
+                colors={['#3498DB', '#2980B9', '#5DADE2']}
+                style={styles.gameOverButtonGradient}
+              >
+                <Text style={styles.gameOverButtonText}>🏠 ANA MENÜ</Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Alt dekoratif elementler */}
+          <View style={styles.gameOverDecoContainer}>
+            <Text style={styles.gameOverDeco}>🎮</Text>
+            <Text style={styles.gameOverDeco}>🏆</Text>
+            <Text style={styles.gameOverDeco}>⭐</Text>
+          </View>
+        </Animated.View>
+      </ExpoLinearGradient>
+    </View>
+  );
+};
+
 const HowToPlayScreen = ({ onBack }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -420,7 +628,8 @@ const HowToPlayScreen = ({ onBack }) => {
                console.log('Geri butonu basıldı!');
                handleBack();
              }}
-             activeOpacity={0.7}
+             activeOpacity={isAndroid ? 0.6 : 0.7}
+             hitSlop={isAndroid ? { top: 15, bottom: 15, left: 15, right: 15 } : { top: 10, bottom: 10, left: 10, right: 10 }}
            >
              <ExpoLinearGradient
                colors={['#FF6B35', '#F7931E', '#FFD700']}
@@ -671,13 +880,15 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
              { transform: [{ translateY: buttonFloatY }] }
            ]}>
                            {/* OYNA Butonu */}
-              <TouchableOpacity 
-                style={styles.playButton} 
-                onPress={() => {
-                  playSound('button');
-                  onStartGame();
-                }}
-              >
+                         <TouchableOpacity 
+             style={styles.playButton} 
+             onPress={() => {
+               playSound('button');
+               onStartGame();
+             }}
+             activeOpacity={0.8}
+             hitSlop={isAndroid ? { top: 10, bottom: 10, left: 10, right: 10 } : undefined}
+           >
                 <ExpoLinearGradient
                   colors={['#FF4757', '#FF3742', '#FF6B7A']}
                   style={styles.playButtonGradient}
@@ -776,6 +987,9 @@ export default function GameScreen() {
   // Ayarlar state'leri
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [hapticEnabled, setHapticEnabled] = useState(true);
+  
+  // Oyun bitti ekranı için state
+  const [showGameOverScreen, setShowGameOverScreen] = useState(false);
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
@@ -1028,15 +1242,8 @@ export default function GameScreen() {
       setNumberList(newList);
       setWronglyPlaced({ value: currentNumber, index: slotIndex });
       setGameOver(true);
+      setShowGameOverScreen(true);
       console.log('❌ Yanlış yerleştirme!');
-      Alert.alert(
-        "💥 OYUN BİTTİ!", 
-        `Yanlış yerleştirdiniz! Sayılar küçükten büyüğe sıralanmalı.\n📊 Skorunuz: ${score}`, 
-        [
-          { text: "🔄 Tekrar Dene", onPress: initializeGame },
-          { text: "🏠 Ana Menü", onPress: backToMenu }
-        ]
-      );
     }
   };
 
@@ -1120,6 +1327,25 @@ export default function GameScreen() {
         hapticEnabled={hapticEnabled}
         setHapticEnabled={setHapticEnabled}
         buttonSound={buttonSound}
+      />
+    );
+  }
+
+  // Oyun bitti ekranı
+  if (showGameOverScreen) {
+    return (
+      <GameOverScreen 
+        score={score}
+        onRestart={() => {
+          playSound('button');
+          setShowGameOverScreen(false);
+          initializeGame();
+        }}
+        onBackToMenu={() => {
+          playSound('button');
+          setShowGameOverScreen(false);
+          backToMenu();
+        }}
       />
     );
   }
@@ -1263,18 +1489,18 @@ const styles = StyleSheet.create({
   },
   cloud: {
     position: 'absolute',
-    fontSize: 30,
+    fontSize: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 23 : isLargeAndroidScreen ? 24 : 30,
     opacity: 0.6,
   },
   cloud2: {
     top: 100,
     right: 50,
-    fontSize: 25,
+    fontSize: isJ6PrimeSize ? 16 : isJ7PrimeSize ? 18 : isSamsungMidRange ? 19 : isLargeAndroidScreen ? 20 : 25,
   },
   cloud3: {
     top: 200,
     left: 30,
-    fontSize: 35,
+    fontSize: isJ6PrimeSize ? 22 : isJ7PrimeSize ? 24 : isSamsungMidRange ? 26 : isLargeAndroidScreen ? 28 : 35,
   },
   sparkleContainer: {
     position: 'absolute',
@@ -1300,35 +1526,35 @@ const styles = StyleSheet.create({
   },
   musicButton: {
     position: 'absolute',
-    top: 50,
-    right: 20,
+    top: isJ6PrimeSize ? 35 : isJ7PrimeSize ? 38 : isSamsungMidRange ? 40 : isLargeAndroidScreen ? 42 : 50,
+    right: responsiveSize.containerPadding,
     zIndex: 10,
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    borderRadius: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 19 : isSamsungMidRange ? 20 : 25,
+    width: isJ6PrimeSize ? 35 : isJ7PrimeSize ? 37 : isSamsungMidRange ? 39 : isLargeAndroidScreen ? 42 : 50,
+    height: isJ6PrimeSize ? 35 : isJ7PrimeSize ? 37 : isSamsungMidRange ? 39 : isLargeAndroidScreen ? 42 : 50,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: isAndroid ? 2 : 4 },
+    shadowOpacity: responsiveSize.shadowOpacity,
+    shadowRadius: isAndroid ? 4 : 8,
+    elevation: isAndroid ? responsiveSize.elevation : 8,
   },
   musicButtonGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 25,
+    borderRadius: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 19 : isSamsungMidRange ? 20 : 25,
     justifyContent: 'center',
     alignItems: 'center',
   },
   musicButtonText: {
-    fontSize: 24,
+    fontSize: isJ6PrimeSize ? 16 : isJ7PrimeSize ? 17 : isSamsungMidRange ? 18 : isLargeAndroidScreen ? 19 : 24,
   },
   menuContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 30,
+    paddingHorizontal: responsiveSize.containerPadding,
+    paddingTop: responsiveSize.headerPadding + (isAndroid ? 5 : 0),
+    paddingBottom: responsiveSize.containerPadding + (isAndroid ? 5 : 0),
     zIndex: 3,
   },
   titleContainer: {
@@ -1349,14 +1575,15 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
   },
   gameTitle: {
-    fontSize: 28,
-    fontWeight: '900',
+    fontSize: responsiveSize.titleFont,
+    fontWeight: isAndroid ? 'bold' : '900',
     color: '#FFFFFF',
     textAlign: 'center',
-    letterSpacing: 2,
+    letterSpacing: isAndroid ? 1.5 : 2,
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    textShadowOffset: { width: isAndroid ? 1 : 2, height: isAndroid ? 1 : 2 },
+    textShadowRadius: isAndroid ? 3 : 4,
+    ...(isAndroid && { includeFontPadding: false }),
   },
   gameSubtitle: {
     fontSize: 18,
@@ -1376,8 +1603,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   numberCharacter: {
-    fontSize: 35,
-    marginHorizontal: 5,
+    fontSize: isJ6PrimeSize ? 22 : isJ7PrimeSize ? 24 : isSamsungMidRange ? 26 : isLargeAndroidScreen ? 28 : 35,
+    marginHorizontal: isJ6PrimeSize ? 2 : isJ7PrimeSize ? 2.5 : isSamsungMidRange ? 3 : isLargeAndroidScreen ? 3.5 : 5,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -1388,22 +1615,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   playButton: {
-    borderRadius: 30,
-    marginBottom: 15,
+    borderRadius: responsiveSize.borderRadius + 15,
+    marginBottom: responsiveSize.itemMargin,
     overflow: 'hidden',
-    width: '85%',
+    width: responsiveSize.maxButtonWidth,
+    maxWidth: isJ6PrimeSize ? 240 : isJ7PrimeSize ? 260 : isSamsungMidRange ? 270 : isLargeAndroidScreen ? 300 : 400,
     shadowColor: '#FF4757',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 15,
+    shadowOffset: { width: 0, height: isAndroid ? 4 : 8 },
+    shadowOpacity: responsiveSize.shadowOpacity,
+    shadowRadius: isAndroid ? 8 : 15,
+    elevation: isAndroid ? responsiveSize.elevation + 7 : 15,
   },
   playButtonGradient: {
-    paddingVertical: 18,
+    paddingVertical: responsiveSize.buttonPadding,
     paddingHorizontal: 40,
     alignItems: 'center',
     borderRadius: 30,
     position: 'relative',
+    minHeight: responsiveSize.buttonHeight,
+    justifyContent: 'center',
   },
   buttonShadow: {
     position: 'absolute',
@@ -1416,7 +1646,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
   },
   playButtonText: {
-    fontSize: 24,
+    fontSize: responsiveSize.buttonFont,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'center',
@@ -1425,21 +1655,24 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   howToPlayButton: {
-    borderRadius: 25,
-    marginBottom: 15,
+    borderRadius: responsiveSize.borderRadius + 10,
+    marginBottom: responsiveSize.itemMargin,
     overflow: 'hidden',
-    width: '75%',
+    width: isJ6PrimeSize ? '60%' : isJ7PrimeSize ? '62%' : isSamsungMidRange ? '64%' : isLargeAndroidScreen ? '68%' : '75%',
+    maxWidth: isJ6PrimeSize ? 200 : isJ7PrimeSize ? 220 : isSamsungMidRange ? 230 : isLargeAndroidScreen ? 260 : 350,
     shadowColor: '#FF8C00',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: isAndroid ? 3 : 6 },
+    shadowOpacity: responsiveSize.shadowOpacity,
+    shadowRadius: isAndroid ? 6 : 10,
+    elevation: isAndroid ? responsiveSize.elevation + 2 : 10,
   },
   howToPlayGradient: {
-    paddingVertical: 15,
+    paddingVertical: responsiveSize.buttonPadding - 3,
     paddingHorizontal: 30,
     alignItems: 'center',
     borderRadius: 25,
+    minHeight: responsiveSize.buttonHeight - 10,
+    justifyContent: 'center',
     position: 'relative',
   },
   howToPlayButtonText: {
@@ -1514,6 +1747,167 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.58)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+
+  // Oyun Bitti Ekranı Stilleri
+  gameOverContainer: {
+    flex: 1,
+  },
+  gameOverBackground: {
+    flex: 1,
+    position: 'relative',
+  },
+  gameOverContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: responsiveSize.containerPadding,
+    zIndex: 3,
+  },
+  gameOverTitleContainer: {
+    marginBottom: 30,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 15,
+  },
+  gameOverTitleBackground: {
+    paddingHorizontal: 25,
+    paddingVertical: 15,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  gameOverTitle: {
+    fontSize: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 24 : isLargeAndroidScreen ? 26 : 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  gameOverMessageContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderRadius: 20,
+    marginBottom: 25,
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  gameOverMessage: {
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 15 : isSamsungMidRange ? 16 : isLargeAndroidScreen ? 17 : 18,
+    fontWeight: '600',
+    color: '#2C3E50',
+    textAlign: 'center',
+    lineHeight: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 24 : isLargeAndroidScreen ? 25 : 26,
+  },
+  gameOverScoreContainer: {
+    marginBottom: 30,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  gameOverScoreBackground: {
+    paddingHorizontal: 30,
+    paddingVertical: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    minWidth: isJ6PrimeSize ? 140 : isJ7PrimeSize ? 150 : isSamsungMidRange ? 160 : isLargeAndroidScreen ? 170 : 180,
+  },
+  gameOverScoreLabel: {
+    fontSize: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 14 : isLargeAndroidScreen ? 15 : 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  gameOverScoreValue: {
+    fontSize: isJ6PrimeSize ? 28 : isJ7PrimeSize ? 30 : isSamsungMidRange ? 32 : isLargeAndroidScreen ? 34 : 36,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  gameOverButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 15,
+  },
+  gameOverButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    width: isJ6PrimeSize ? '75%' : isJ7PrimeSize ? '78%' : isSamsungMidRange ? '80%' : isLargeAndroidScreen ? '82%' : '85%',
+    maxWidth: isJ6PrimeSize ? 250 : isJ7PrimeSize ? 270 : isSamsungMidRange ? 280 : isLargeAndroidScreen ? 300 : 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  gameOverButtonGradient: {
+    paddingVertical: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 14 : isLargeAndroidScreen ? 15 : 16,
+    paddingHorizontal: 25,
+    alignItems: 'center',
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  gameOverButtonText: {
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 15 : isSamsungMidRange ? 16 : isLargeAndroidScreen ? 17 : 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  gameOverDecoContainer: {
+    flexDirection: 'row',
+    marginTop: 25,
+    gap: 15,
+  },
+  gameOverDeco: {
+    fontSize: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 24 : isLargeAndroidScreen ? 26 : 28,
+    opacity: 0.7,
+  },
+  gameOverCloud1: {
+    top: 80,
+    left: 30,
+    fontSize: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 20 : isSamsungMidRange ? 22 : isLargeAndroidScreen ? 24 : 26,
+    opacity: 0.4,
+  },
+  gameOverCloud2: {
+    top: 150,
+    right: 40,
+    fontSize: isJ6PrimeSize ? 16 : isJ7PrimeSize ? 18 : isSamsungMidRange ? 20 : isLargeAndroidScreen ? 22 : 24,
+    opacity: 0.3,
+  },
+  gameOverCloud3: {
+    bottom: 200,
+    left: 50,
+    fontSize: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 24 : isLargeAndroidScreen ? 26 : 28,
+    opacity: 0.4,
+  },
+  gameOverCloud4: {
+    bottom: 120,
+    right: 30,
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 16 : isSamsungMidRange ? 18 : isLargeAndroidScreen ? 20 : 22,
+    opacity: 0.3,
   },
 
   // Yükleme Ekranı Stilleri
@@ -1647,23 +2041,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingTop: responsiveSize.headerPadding,
+    paddingHorizontal: responsiveSize.containerPadding,
+    paddingBottom: responsiveSize.containerPadding,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.2)',
     zIndex: 1000,
   },
   howToPlayBackButton: {
-    borderRadius: 20,
+    borderRadius: responsiveSize.borderRadius + 5,
     overflow: 'hidden',
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 2,
+    shadowOffset: { width: 0, height: isAndroid ? 2 : 4 },
+    shadowOpacity: responsiveSize.shadowOpacity,
+    shadowRadius: isAndroid ? 4 : 8,
+    elevation: isAndroid ? responsiveSize.elevation : 8,
+    borderWidth: isAndroid ? 1.5 : 2,
     borderColor: '#FFF',
   },
   howToPlayBackButtonGradient: {
@@ -1681,7 +2075,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   howToPlayHeaderTitle: {
-    fontSize: 18,
+    fontSize: responsiveSize.subtitleFont,
     fontWeight: 'bold',
     color: '#FF8C00',
     textShadowColor: '#FFFFFF',
@@ -1695,9 +2089,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingBottom: 40,
+    paddingHorizontal: responsiveSize.containerPadding,
+    paddingVertical: responsiveSize.containerPadding,
+    paddingBottom: responsiveSize.containerPadding * 2,
   },
   howToPlayTitleContainer: {
     alignItems: 'center',
@@ -1765,15 +2159,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ruleTitle: {
-    fontSize: 14,
+    fontSize: responsiveSize.textFont,
     fontWeight: 'bold',
     color: '#FF8C00',
     marginBottom: 5,
   },
   ruleText: {
-    fontSize: 12,
+    fontSize: responsiveSize.textFont - 2,
     color: '#333333',
-    lineHeight: 16,
+    lineHeight: responsiveSize.textFont + 4,
     opacity: 1,
   },
   exampleContainer: {
@@ -1824,8 +2218,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 10,
-    paddingHorizontal: 20,
+    paddingTop: responsiveSize.containerPadding - 5,
+    paddingHorizontal: responsiveSize.containerPadding,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1886,18 +2280,18 @@ const styles = StyleSheet.create({
   },
   cloud: {
     position: 'absolute',
-    fontSize: 30,
+    fontSize: isJ6PrimeSize ? 22 : isJ7PrimeSize ? 24 : isSamsungMidRange ? 26 : isLargeAndroidScreen ? 28 : 30,
     opacity: 0.3,
   },
   cloud2: {
     top: 100,
     right: 50,
-    fontSize: 25,
+    fontSize: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 20 : isSamsungMidRange ? 21 : isLargeAndroidScreen ? 23 : 25,
   },
   cloud3: {
     top: 200,
     left: 30,
-    fontSize: 35,
+    fontSize: isJ6PrimeSize ? 26 : isJ7PrimeSize ? 28 : isSamsungMidRange ? 30 : isLargeAndroidScreen ? 32 : 35,
   },
   gameCounter: {
     fontSize: 16,
@@ -1919,8 +2313,8 @@ const styles = StyleSheet.create({
   gameArea: {
     flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 15,
-    paddingVertical: 20,
+    paddingHorizontal: responsiveSize.containerPadding - 5,
+    paddingVertical: responsiveSize.containerPadding,
     zIndex: 10,
   },
   leftContainer: {
@@ -1947,22 +2341,22 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   numberSlot: {
-    width: 70,
-    height: 45,
+    width: Math.round((isSmallScreen ? 60 : isMediumScreen ? 70 : 80) * platformMultiplier),
+    height: Math.round((isSmallScreen ? 40 : isMediumScreen ? 45 : 50) * platformMultiplier),
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
+    borderRadius: responsiveSize.borderRadius,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-    borderWidth: 2,
+    marginLeft: responsiveSize.itemMargin - 4,
+    borderWidth: isAndroid ? 1.5 : 2,
     borderColor: '#FF6B35',
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-    minHeight: 45,
-    minWidth: 70,
+    shadowOffset: { width: 0, height: isAndroid ? 1 : 2 },
+    shadowOpacity: responsiveSize.shadowOpacity,
+    shadowRadius: isAndroid ? 2 : 4,
+    elevation: isAndroid ? responsiveSize.elevation - 4 : 4,
+    minHeight: Math.round((isSmallScreen ? 40 : isMediumScreen ? 45 : 50) * platformMultiplier),
+    minWidth: Math.round((isSmallScreen ? 60 : isMediumScreen ? 70 : 80) * platformMultiplier),
   },
   emptySlot: {
     backgroundColor: 'rgba(255, 215, 0, 0.2)',
@@ -2029,23 +2423,23 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
   numberCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: isJ6PrimeSize ? 55 : isJ7PrimeSize ? 60 : isSamsungMidRange ? 62 : isLargeAndroidScreen ? 65 : 80,
+    height: isJ6PrimeSize ? 55 : isJ7PrimeSize ? 60 : isSamsungMidRange ? 62 : isLargeAndroidScreen ? 65 : 80,
+    borderRadius: isJ6PrimeSize ? 27.5 : isJ7PrimeSize ? 30 : isSamsungMidRange ? 31 : isLargeAndroidScreen ? 32.5 : 40,
     backgroundColor: 'rgba(255, 107, 53, 0.9)',
-    borderWidth: 3,
+    borderWidth: isAndroid ? 2 : 3,
     borderColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: isAndroid ? 2 : 4 },
+    shadowOpacity: responsiveSize.shadowOpacity,
+    shadowRadius: isAndroid ? 4 : 8,
+    elevation: isAndroid ? responsiveSize.elevation : 8,
   },
   currentNumber: {
-    fontSize: 36,
+    fontSize: isJ6PrimeSize ? 24 : isJ7PrimeSize ? 26 : isSamsungMidRange ? 28 : isLargeAndroidScreen ? 30 : 36,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textShadowColor: '#FF6B35',
@@ -2125,8 +2519,8 @@ const styles = StyleSheet.create({
   },
   settingsContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingHorizontal: responsiveSize.containerPadding,
+    paddingTop: responsiveSize.headerPadding + 10,
     zIndex: 3,
   },
   settingsHeader: {
@@ -2156,7 +2550,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   settingsTitle: {
-    fontSize: 24,
+    fontSize: responsiveSize.buttonFont - 2,
     fontWeight: 'bold',
     color: '#FF6B35',
     textAlign: 'center',
