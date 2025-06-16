@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, SafeAreaView, Dimensions, LinearGradient, Platform, PixelRatio } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, SafeAreaView, Dimensions, LinearGradient, Platform, PixelRatio, Modal } from 'react-native';
 import { Audio } from 'expo-av';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 
 
@@ -36,11 +37,11 @@ const isJ6PrimeSize = isAndroid && (width >= 350 && width <= 390) && (height >= 
 const isSamsungMidRange = isAndroid && (width >= 350 && width <= 420) && (height >= 620 && height <= 750);
 
 const androidMultiplier = isAndroid ? 
-  (isJ6PrimeSize ? 0.75 : // J6+ Prime için daha fazla küçültme
-   isJ7PrimeSize ? 0.8 : // J7 Prime için küçültme
-   isSamsungMidRange ? 0.82 : // Samsung orta segment için küçültme
-   isLargeAndroidScreen ? 0.88 : // Büyük Android ekranlar için küçültme
-   pixelRatio > 2.5 ? 0.95 : // Yüksek yoğunluk için küçültme
+  (isJ6PrimeSize ? 0.75 : 
+   isJ7PrimeSize ? 0.8 :
+   isSamsungMidRange ? 0.82 : 
+   isLargeAndroidScreen ? 0.88 : 
+   pixelRatio > 2.5 ? 0.95 : 
    pixelRatio < 1.5 ? 0.9 : 0.92) : 1;
 
 const iosMultiplier = isIOS ? (height > 800 ? 1.05 : height < 700 ? 0.95 : 1) : 1;
@@ -87,15 +88,15 @@ const shuffleArray = (array) => {
   return array;
 };
 
-// 1-30 arası rastgele 10 sayı seç
+// 1-20 arası rastgele 10 sayı seç
 const generateRandomNumbers = () => {
-  const allNumbers = Array.from({ length: 30 }, (_, i) => i + 1); // 1-30 arası tüm sayılar
+  const allNumbers = Array.from({ length: 20 }, (_, i) => i + 1); // 1-20 arası tüm sayılar
   const shuffled = shuffleArray([...allNumbers]);
   return shuffled.slice(0, 10); // İlk 10 tanesini al
 };
 
-// Sıralı sayılar (1-10)
-const generateSequentialNumbers = () => {
+  // Sıralı sayılar (1-10)
+  const generateSequentialNumbers = () => {
   return Array.from({ length: 10 }, (_, i) => i + 1); // 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 };
 
@@ -433,7 +434,7 @@ const SettingsScreen = ({
 };
 
 // Nasıl Oynanır Sayfası
-const GameOverScreen = ({ score, onRestart, onBackToMenu }) => {
+const GameOverScreen = ({ score, highScore, isNewRecord, onRestart, onBackToMenu }) => {
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -524,11 +525,18 @@ const GameOverScreen = ({ score, onRestart, onBackToMenu }) => {
           {/* Skor */}
           <View style={styles.gameOverScoreContainer}>
             <ExpoLinearGradient
-              colors={['#FFD700', '#FFA500', '#FF8C00']}
+              colors={isNewRecord ? ['#FF6B35', '#F7931E', '#FFD700'] : ['#FFD700', '#FFA500', '#FF8C00']}
               style={styles.gameOverScoreBackground}
             >
-              <Text style={styles.gameOverScoreLabel}>📊 SKORUNUZ</Text>
+              <Text style={styles.gameOverScoreLabel}>
+                {isNewRecord ? '🎉 YENİ REKOR! 🎉' : '📊 SKORUNUZ'}
+              </Text>
               <Text style={styles.gameOverScoreValue}>{score}</Text>
+              {!isNewRecord && highScore > 0 && (
+                <Text style={styles.gameOverHighScoreText}>
+                  En Yüksek: {highScore}
+                </Text>
+              )}
             </ExpoLinearGradient>
           </View>
 
@@ -571,6 +579,462 @@ const GameOverScreen = ({ score, onRestart, onBackToMenu }) => {
       </ExpoLinearGradient>
     </View>
   );
+};
+
+const ComingSoonAlert = ({ onClose }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Giriş animasyonu
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Sürekli bounce animasyonu
+    const bounceAnimation = () => {
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => bounceAnimation());
+    };
+    bounceAnimation();
+  }, []);
+
+  const bounceInterpolate = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.05],
+  });
+
+  const handleClose = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  };
+
+  return (
+    <View style={styles.comingSoonOverlay}>
+      <Animated.View 
+        style={[
+          styles.comingSoonContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}
+      >
+        <ExpoLinearGradient
+          colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
+          style={styles.comingSoonBackground}
+        >
+          {/* Arka plan bulutları */}
+          <Text style={[styles.cloud, styles.comingSoonCloud1]}>☁️</Text>
+          <Text style={[styles.cloud, styles.comingSoonCloud2]}>☁️</Text>
+
+          <View style={styles.comingSoonContent}>
+            {/* Ana ikon */}
+            <Animated.View 
+              style={[
+                styles.comingSoonIconContainer,
+                { transform: [{ scale: bounceInterpolate }] }
+              ]}
+            >
+              <Text style={styles.comingSoonIcon}>🚀</Text>
+            </Animated.View>
+
+            {/* Başlık */}
+            <View style={styles.comingSoonTitleContainer}>
+              <ExpoLinearGradient
+                colors={['#FF6B35', '#F7931E', '#FFD700']}
+                style={styles.comingSoonTitleBackground}
+              >
+                <Text style={styles.comingSoonTitle}>🔜 YAKINDA GELİYOR! 🔜</Text>
+              </ExpoLinearGradient>
+            </View>
+
+            {/* Mesaj */}
+            <View style={styles.comingSoonMessageContainer}>
+              <Text style={styles.comingSoonMessage}>
+                📊 İstatistikler sayfası{'\n'}
+                gelecek güncellemede{'\n'}
+                sizlerle olacak!
+              </Text>
+            </View>
+
+            {/* Alt mesaj */}
+            <View style={styles.comingSoonSubMessageContainer}>
+              <Text style={styles.comingSoonSubMessage}>
+                🎮 Şimdilik oyunun tadını çıkarın! 🎮
+              </Text>
+            </View>
+
+            {/* Tamam butonu */}
+            <TouchableOpacity 
+              style={styles.comingSoonButton}
+              onPress={handleClose}
+              activeOpacity={0.8}
+            >
+              <ExpoLinearGradient
+                colors={['#58D68D', '#27AE60', '#7DCEA0']}
+                style={styles.comingSoonButtonGradient}
+              >
+                <Text style={styles.comingSoonButtonText}>✨ TAMAM ✨</Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ExpoLinearGradient>
+      </Animated.View>
+    </View>
+  );
+};
+
+// Bonus Tur Alert - GameOverScreen temasında
+const BonusTurAlert = ({ onClose }) => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Giriş animasyonu
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Sürekli bounce animasyonu
+    const bounceAnimation = () => {
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start(() => bounceAnimation());
+    };
+    bounceAnimation();
+  }, []);
+
+  const bounceInterpolate = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.1],
+  });
+
+  const handleClose = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  };
+
+  return (
+    <View style={styles.gameOverContainer}>
+      <ExpoLinearGradient
+        colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
+        style={styles.gameOverBackground}
+      >
+        {/* Arka plan bulutları */}
+        <Text style={[styles.cloud, styles.gameOverCloud1]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud2]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud3]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud4]}>☁️</Text>
+
+        <Animated.View 
+          style={[
+            styles.gameOverContent,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          {/* Ana başlık */}
+          <Animated.View 
+            style={[
+              styles.gameOverTitleContainer,
+              { transform: [{ scale: bounceInterpolate }] }
+            ]}
+          >
+            <ExpoLinearGradient
+              colors={['#FFD700', '#FFA500', '#FF8C00']}
+              style={styles.gameOverTitleBackground}
+            >
+              <Text style={styles.gameOverTitle}>🎉 BONUS TUR! 🎉</Text>
+            </ExpoLinearGradient>
+          </Animated.View>
+
+          {/* Açıklama */}
+          <View style={styles.gameOverMessageContainer}>
+            <Text style={styles.gameOverMessage}>
+              Bu tur kolay! 😊{'\n'}
+              Sayılar 1'den 10'a kadar sıralı gelecek!
+            </Text>
+          </View>
+
+          {/* Buton */}
+          <View style={styles.gameOverButtonContainer}>
+            <TouchableOpacity 
+              style={styles.gameOverButton}
+              onPress={handleClose}
+              activeOpacity={0.8}
+            >
+              <ExpoLinearGradient
+                colors={['#58D68D', '#27AE60', '#7DCEA0']}
+                style={styles.gameOverButtonGradient}
+              >
+                <Text style={styles.gameOverButtonText}>🚀 HAYDİ BAŞLAYALIM!</Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Alt dekoratif elementler */}
+          <View style={styles.gameOverDecoContainer}>
+            <Text style={styles.gameOverDeco}>🎯</Text>
+            <Text style={styles.gameOverDeco}>⭐</Text>
+            <Text style={styles.gameOverDeco}>🎮</Text>
+          </View>
+        </Animated.View>
+      </ExpoLinearGradient>
+    </View>
+  );
+};
+
+// Oyun Bitti Kutlama Alert - GameOverScreen temasında
+const OyunBittiAlert = ({ onClose, onRestart, score, bonusMessage }) => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Giriş animasyonu
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Sürekli bounce animasyonu
+    const bounceAnimation = () => {
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start(() => bounceAnimation());
+    };
+    bounceAnimation();
+  }, []);
+
+  const bounceInterpolate = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.1],
+  });
+
+  const handleClose = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  };
+
+  const handleRestart = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      onRestart();
+    });
+  };
+
+  return (
+    <View style={styles.gameOverContainer}>
+      <ExpoLinearGradient
+        colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
+        style={styles.gameOverBackground}
+      >
+        {/* Arka plan bulutları */}
+        <Text style={[styles.cloud, styles.gameOverCloud1]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud2]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud3]}>☁️</Text>
+        <Text style={[styles.cloud, styles.gameOverCloud4]}>☁️</Text>
+
+        <Animated.View 
+          style={[
+            styles.gameOverContent,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          {/* Ana başlık */}
+          <Animated.View 
+            style={[
+              styles.gameOverTitleContainer,
+              { transform: [{ scale: bounceInterpolate }] }
+            ]}
+          >
+            <ExpoLinearGradient
+              colors={['#4CAF50', '#388E3C', '#66BB6A']}
+              style={styles.gameOverTitleBackground}
+            >
+              <Text style={styles.gameOverTitle}>🎊 TEBRİKLER! 🎊</Text>
+            </ExpoLinearGradient>
+          </Animated.View>
+
+          {/* Açıklama */}
+          <View style={styles.gameOverMessageContainer}>
+            <Text style={styles.gameOverMessage}>
+              Oyunu bitirdiniz!{bonusMessage} 🎉{'\n'}
+              Harika bir performans sergiledıniz!
+            </Text>
+          </View>
+
+          {/* Skor */}
+          <View style={styles.gameOverScoreContainer}>
+            <ExpoLinearGradient
+              colors={['#FFD700', '#FFA500', '#FF8C00']}
+              style={styles.gameOverScoreBackground}
+            >
+              <Text style={styles.gameOverScoreLabel}>🏆 SKORUNUZ</Text>
+              <Text style={styles.gameOverScoreValue}>{score}</Text>
+            </ExpoLinearGradient>
+          </View>
+
+          {/* Butonlar */}
+          <View style={styles.gameOverButtonContainer}>
+            <TouchableOpacity 
+              style={styles.gameOverButton}
+              onPress={handleRestart}
+              activeOpacity={0.8}
+            >
+              <ExpoLinearGradient
+                colors={['#58D68D', '#27AE60', '#7DCEA0']}
+                style={styles.gameOverButtonGradient}
+              >
+                <Text style={styles.gameOverButtonText}>🚀 DEVAM ET</Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.gameOverButton}
+              onPress={handleClose}
+              activeOpacity={0.8}
+            >
+              <ExpoLinearGradient
+                colors={['#3498DB', '#2980B9', '#5DADE2']}
+                style={styles.gameOverButtonGradient}
+              >
+                <Text style={styles.gameOverButtonText}>🏠 ANA MENÜ</Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Alt dekoratif elementler */}
+          <View style={styles.gameOverDecoContainer}>
+            <Text style={styles.gameOverDeco}>🎮</Text>
+            <Text style={styles.gameOverDeco}>🏆</Text>
+            <Text style={styles.gameOverDeco}>⭐</Text>
+          </View>
+        </Animated.View>
+      </ExpoLinearGradient>
+    </View>
+  );
+};
+
+const StatsModal = ({ visible, onClose, highScore, totalGamesPlayed }) => {
+  if (!visible) return null;
+
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View style={{ flex: 1 }}>
+        <ComingSoonAlert onClose={onClose} />
+      </View>
+    </Modal>
+  );
+};
+
+const StatsScreen = ({ onBack, highScore, totalGamesPlayed }) => {
+  const [showComingSoon, setShowComingSoon] = useState(true);
+
+  const handleBack = () => {
+    onBack();
+  };
+
+  if (showComingSoon) {
+    return (
+      <ComingSoonAlert 
+        onClose={() => {
+          setShowComingSoon(false);
+          handleBack();
+        }}
+      />
+    );
+  }
+
+  return null; // Bu kısım artık gösterilmeyecek
 };
 
 const HowToPlayScreen = ({ onBack }) => {
@@ -703,7 +1167,7 @@ const HowToPlayScreen = ({ onBack }) => {
 };
 
 // Profesyonel Oyun Menüsü
-const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled }) => {
+const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
   const titleBounce = useRef(new Animated.Value(1)).current;
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const characterBounce = useRef(new Animated.Value(1)).current;
@@ -922,13 +1386,16 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
            <View style={styles.bottomIconsContainer}>
              <TouchableOpacity 
                style={styles.bottomIcon}
-               onPress={() => playSound('button')}
+               onPress={() => {
+                 playSound('button');
+                 onStats();
+               }}
              >
                <ExpoLinearGradient
                  colors={['#F39C12', '#E67E22', '#F4D03F']}
                  style={styles.bottomIconGradient}
                >
-                 <Text style={styles.bottomIconText}>🏆</Text>
+                 <Text style={styles.bottomIconText}>📊</Text>
                </ExpoLinearGradient>
              </TouchableOpacity>
              
@@ -961,9 +1428,18 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, musicEnabled, onToggle
            </View>
 
            {/* Versiyon Bilgisi */}
-           <View style={styles.versionContainer}>
-             <Text style={styles.versionText}>Versiyon Beta</Text>
-           </View>
+                     <View style={styles.versionContainer}>
+            <Text style={styles.versionText}>Versiyon 1.0.0</Text>
+            <TouchableOpacity 
+              style={styles.privacyButton}
+              onPress={() => {
+                // Privacy policy link - Store yayınında gerçek link olacak
+                console.log('Gizlilik Politikası açılacak');
+              }}
+            >
+              <Text style={styles.privacyText}>Gizlilik Politikası</Text>
+            </TouchableOpacity>
+          </View>
          </View>
        </ExpoLinearGradient>
      </View>
@@ -976,6 +1452,8 @@ export default function GameScreen() {
   const [numbersToPlace, setNumbersToPlace] = useState([]);
   const [currentNumber, setCurrentNumber] = useState(null);
   const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [totalGamesPlayed, setTotalGamesPlayed] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [wronglyPlaced, setWronglyPlaced] = useState(null);
   const [gameCount, setGameCount] = useState(0);
@@ -990,11 +1468,20 @@ export default function GameScreen() {
   
   // Oyun bitti ekranı için state
   const [showGameOverScreen, setShowGameOverScreen] = useState(false);
+  
+  // İstatistikler modal için state
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  
+  // Alert state'leri
+  const [showBonusTurAlert, setShowBonusTurAlert] = useState(false);
+  const [showOyunBittiAlert, setShowOyunBittiAlert] = useState(false);
+  const [oyunBittiData, setOyunBittiData] = useState({ score: 0, bonusMessage: '' });
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadSounds();
+    loadGameStats();
     return () => {
       if (backgroundMusic) {
         backgroundMusic.unloadAsync();
@@ -1004,6 +1491,45 @@ export default function GameScreen() {
       }
     };
   }, []);
+
+  // Oyun istatistiklerini yükle
+  const loadGameStats = async () => {
+    try {
+      const savedHighScore = await AsyncStorage.getItem('highScore');
+      const savedTotalGames = await AsyncStorage.getItem('totalGamesPlayed');
+      
+      if (savedHighScore) {
+        setHighScore(parseInt(savedHighScore));
+      }
+      if (savedTotalGames) {
+        setTotalGamesPlayed(parseInt(savedTotalGames));
+      }
+    } catch (error) {
+      console.log('İstatistikler yüklenemedi:', error);
+    }
+  };
+
+  // Oyun istatistiklerini kaydet
+  const saveGameStats = async (newScore) => {
+    try {
+      const newTotalGames = totalGamesPlayed + 1;
+      let newHighScore = highScore;
+      
+      if (newScore > highScore) {
+        newHighScore = newScore;
+        await AsyncStorage.setItem('highScore', newScore.toString());
+        setHighScore(newHighScore);
+      }
+      
+      await AsyncStorage.setItem('totalGamesPlayed', newTotalGames.toString());
+      setTotalGamesPlayed(newTotalGames);
+      
+      return newScore > highScore; // Yeni rekor mu?
+    } catch (error) {
+      console.log('İstatistikler kaydedilemedi:', error);
+      return false;
+    }
+  };
 
   const loadSounds = async () => {
     try {
@@ -1114,6 +1640,10 @@ export default function GameScreen() {
     setCurrentScreen('settings');
   };
 
+  const showStats = () => {
+    setShowStatsModal(true);
+  };
+
   const backToMenu = () => {
     setCurrentScreen('menu');
     setGameCount(0);
@@ -1136,11 +1666,7 @@ export default function GameScreen() {
     let numbersToUse;
     if (isEasy) {
       numbersToUse = generateSequentialNumbers();
-      Alert.alert(
-        "🎉 BONUS TUR!", 
-        "Bu tur kolay! Sayılar 1'den 10'a kadar sıralı gelecek.", 
-        [{ text: "Harika! 🚀", onPress: () => {} }]
-      );
+      setShowBonusTurAlert(true);
     } else {
       numbersToUse = generateRandomNumbers();
     }
@@ -1226,14 +1752,11 @@ export default function GameScreen() {
         setGameOver(true);
         setCurrentNumber(null);
         const bonusMessage = isEasyRound ? " 🎉 (Bonus Tur Tamamlandı!)" : "";
-        Alert.alert(
-          "🎊 TEBRİKLER!", 
-          `Oyunu bitirdiniz!${bonusMessage}\n🏆 Skorunuz: ${score + points}`, 
-          [
-            { text: "🚀 Devam Et", onPress: initializeGame },
-            { text: "🏠 Ana Menü", onPress: backToMenu }
-          ]
-        );
+        setOyunBittiData({ 
+          score: score + points, 
+          bonusMessage: bonusMessage 
+        });
+        setShowOyunBittiAlert(true);
       } else {
         setCurrentNumber(remainingNumbers[0]);
       }
@@ -1242,6 +1765,10 @@ export default function GameScreen() {
       setNumberList(newList);
       setWronglyPlaced({ value: currentNumber, index: slotIndex });
       setGameOver(true);
+      
+      // Skorları kaydet
+      saveGameStats(score);
+      
       setShowGameOverScreen(true);
       console.log('❌ Yanlış yerleştirme!');
     }
@@ -1303,16 +1830,27 @@ export default function GameScreen() {
 
   if (currentScreen === 'menu') {
     return (
-      <MainMenu 
-        onStartGame={startGame} 
-        onHowToPlay={showHowToPlay}
-        onSettings={showSettings}
-        musicEnabled={musicEnabled}
-        onToggleMusic={toggleMusic}
-        buttonSound={buttonSound}
-        soundEnabled={soundEnabled}
-        hapticEnabled={hapticEnabled}
-      />
+      <>
+        <MainMenu 
+          onStartGame={startGame} 
+          onHowToPlay={showHowToPlay}
+          onSettings={showSettings}
+          onStats={showStats}
+          musicEnabled={musicEnabled}
+          onToggleMusic={toggleMusic}
+          buttonSound={buttonSound}
+          soundEnabled={soundEnabled}
+          hapticEnabled={hapticEnabled}
+          highScore={highScore}
+          totalGamesPlayed={totalGamesPlayed}
+        />
+        <StatsModal
+          visible={showStatsModal}
+          onClose={() => setShowStatsModal(false)}
+          highScore={highScore}
+          totalGamesPlayed={totalGamesPlayed}
+        />
+      </>
     );
   }
 
@@ -1331,11 +1869,15 @@ export default function GameScreen() {
     );
   }
 
+
+
   // Oyun bitti ekranı
   if (showGameOverScreen) {
     return (
       <GameOverScreen 
         score={score}
+        highScore={highScore}
+        isNewRecord={score > 0 && score >= highScore}
         onRestart={() => {
           playSound('button');
           setShowGameOverScreen(false);
@@ -1466,6 +2008,41 @@ A = π r²    V = ⁴⁄₃πr³`}
           </View>
         </View>
       </ExpoLinearGradient>
+      
+      {/* Bonus Tur Alert */}
+      {showBonusTurAlert && (
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showBonusTurAlert}
+          onRequestClose={() => setShowBonusTurAlert(false)}
+        >
+          <BonusTurAlert onClose={() => setShowBonusTurAlert(false)} />
+        </Modal>
+      )}
+      
+      {/* Oyun Bitti Alert */}
+      {showOyunBittiAlert && (
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showOyunBittiAlert}
+          onRequestClose={() => setShowOyunBittiAlert(false)}
+        >
+          <OyunBittiAlert 
+            onClose={() => {
+              setShowOyunBittiAlert(false);
+              backToMenu();
+            }}
+            onRestart={() => {
+              setShowOyunBittiAlert(false);
+              initializeGame();
+            }}
+            score={oyunBittiData.score}
+            bonusMessage={oyunBittiData.bonusMessage}
+          />
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -1747,6 +2324,286 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.58)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    marginBottom: 5,
+  },
+  privacyButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  privacyText: {
+    fontSize: 10,
+    color: 'rgba(0, 0, 0, 0.3)',
+    fontWeight: '400',
+    textDecorationLine: 'underline',
+    textAlign: 'center',
+  },
+
+  // Yakında Geliyor Alert Stilleri
+  comingSoonOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  comingSoonContainer: {
+    width: isJ6PrimeSize ? '85%' : isJ7PrimeSize ? '87%' : isSamsungMidRange ? '90%' : isLargeAndroidScreen ? '92%' : '95%',
+    maxWidth: isJ6PrimeSize ? 300 : isJ7PrimeSize ? 320 : isSamsungMidRange ? 340 : isLargeAndroidScreen ? 360 : 400,
+    borderRadius: 25,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  comingSoonBackground: {
+    position: 'relative',
+    paddingVertical: isJ6PrimeSize ? 25 : isJ7PrimeSize ? 27 : isSamsungMidRange ? 30 : isLargeAndroidScreen ? 32 : 35,
+    paddingHorizontal: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 25 : isLargeAndroidScreen ? 27 : 30,
+  },
+  comingSoonContent: {
+    alignItems: 'center',
+    zIndex: 3,
+  },
+  comingSoonIconContainer: {
+    marginBottom: 20,
+  },
+  comingSoonIcon: {
+    fontSize: isJ6PrimeSize ? 40 : isJ7PrimeSize ? 45 : isSamsungMidRange ? 50 : isLargeAndroidScreen ? 55 : 60,
+    textAlign: 'center',
+  },
+  comingSoonTitleContainer: {
+    marginBottom: 20,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  comingSoonTitleBackground: {
+    paddingHorizontal: isJ6PrimeSize ? 15 : isJ7PrimeSize ? 17 : isSamsungMidRange ? 20 : isLargeAndroidScreen ? 22 : 25,
+    paddingVertical: isJ6PrimeSize ? 10 : isJ7PrimeSize ? 11 : isSamsungMidRange ? 12 : isLargeAndroidScreen ? 13 : 15,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  comingSoonTitle: {
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 15 : isSamsungMidRange ? 16 : isLargeAndroidScreen ? 17 : 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  comingSoonMessageContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: isJ6PrimeSize ? 15 : isJ7PrimeSize ? 17 : isSamsungMidRange ? 20 : isLargeAndroidScreen ? 22 : 25,
+    paddingVertical: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 15 : isLargeAndroidScreen ? 17 : 20,
+    borderRadius: 15,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  comingSoonMessage: {
+    fontSize: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 14 : isLargeAndroidScreen ? 15 : 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    textAlign: 'center',
+    lineHeight: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 19 : isSamsungMidRange ? 20 : isLargeAndroidScreen ? 21 : 22,
+  },
+  comingSoonSubMessageContainer: {
+    marginBottom: 25,
+  },
+  comingSoonSubMessage: {
+    fontSize: isJ6PrimeSize ? 11 : isJ7PrimeSize ? 12 : isSamsungMidRange ? 13 : isLargeAndroidScreen ? 14 : 15,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  comingSoonButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    width: isJ6PrimeSize ? '80%' : isJ7PrimeSize ? '82%' : isSamsungMidRange ? '85%' : isLargeAndroidScreen ? '87%' : '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  comingSoonButtonGradient: {
+    paddingVertical: isJ6PrimeSize ? 10 : isJ7PrimeSize ? 11 : isSamsungMidRange ? 12 : isLargeAndroidScreen ? 13 : 15,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  comingSoonButtonText: {
+    fontSize: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 14 : isLargeAndroidScreen ? 15 : 16,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  comingSoonCloud1: {
+    position: 'absolute',
+    top: 15,
+    left: 20,
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 16 : isSamsungMidRange ? 18 : isLargeAndroidScreen ? 20 : 22,
+    opacity: 0.4,
+    zIndex: 1,
+  },
+  comingSoonCloud2: {
+    position: 'absolute',
+    bottom: 20,
+    right: 25,
+    fontSize: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 14 : isSamsungMidRange ? 16 : isLargeAndroidScreen ? 18 : 20,
+    opacity: 0.3,
+    zIndex: 1,
+  },
+
+  // İstatistikler Ekranı Stilleri
+  statsContainer: {
+    flex: 1,
+  },
+  statsBackground: {
+    flex: 1,
+    position: 'relative',
+  },
+  statsContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: responsiveSize.containerPadding,
+    zIndex: 3,
+  },
+  statsTitleContainer: {
+    marginBottom: 40,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 15,
+  },
+  statsTitleBackground: {
+    paddingHorizontal: 25,
+    paddingVertical: 15,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  statsTitle: {
+    fontSize: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 20 : isSamsungMidRange ? 22 : isLargeAndroidScreen ? 24 : 26,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsCardsContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 20,
+    marginBottom: 40,
+  },
+  statsCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    width: isJ6PrimeSize ? '85%' : isJ7PrimeSize ? '87%' : isSamsungMidRange ? '90%' : isLargeAndroidScreen ? '92%' : '95%',
+    maxWidth: isJ6PrimeSize ? 280 : isJ7PrimeSize ? 300 : isSamsungMidRange ? 320 : isLargeAndroidScreen ? 340 : 380,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  statsCardGradient: {
+    paddingVertical: isJ6PrimeSize ? 15 : isJ7PrimeSize ? 17 : isSamsungMidRange ? 19 : isLargeAndroidScreen ? 21 : 25,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  statsCardIcon: {
+    fontSize: isJ6PrimeSize ? 24 : isJ7PrimeSize ? 26 : isSamsungMidRange ? 28 : isLargeAndroidScreen ? 30 : 32,
+    marginBottom: 8,
+  },
+  statsCardLabel: {
+    fontSize: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 14 : isLargeAndroidScreen ? 15 : 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  statsCardValue: {
+    fontSize: isJ6PrimeSize ? 20 : isJ7PrimeSize ? 22 : isSamsungMidRange ? 24 : isLargeAndroidScreen ? 26 : 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsBackButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    width: isJ6PrimeSize ? '75%' : isJ7PrimeSize ? '78%' : isSamsungMidRange ? '80%' : isLargeAndroidScreen ? '82%' : '85%',
+    maxWidth: isJ6PrimeSize ? 250 : isJ7PrimeSize ? 270 : isSamsungMidRange ? 280 : isLargeAndroidScreen ? 300 : 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  statsBackButtonGradient: {
+    paddingVertical: isJ6PrimeSize ? 12 : isJ7PrimeSize ? 13 : isSamsungMidRange ? 14 : isLargeAndroidScreen ? 15 : 16,
+    paddingHorizontal: 25,
+    alignItems: 'center',
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  statsBackButtonText: {
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 15 : isSamsungMidRange ? 16 : isLargeAndroidScreen ? 17 : 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  statsCloud1: {
+    top: 100,
+    left: 40,
+    fontSize: isJ6PrimeSize ? 16 : isJ7PrimeSize ? 18 : isSamsungMidRange ? 20 : isLargeAndroidScreen ? 22 : 24,
+    opacity: 0.4,
+  },
+  statsCloud2: {
+    top: 200,
+    right: 30,
+    fontSize: isJ6PrimeSize ? 14 : isJ7PrimeSize ? 16 : isSamsungMidRange ? 18 : isLargeAndroidScreen ? 20 : 22,
+    opacity: 0.3,
+  },
+  statsCloud3: {
+    bottom: 150,
+    left: 20,
+    fontSize: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 20 : isSamsungMidRange ? 22 : isLargeAndroidScreen ? 24 : 26,
+    opacity: 0.4,
   },
 
   // Oyun Bitti Ekranı Stilleri
@@ -1842,6 +2699,15 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
+  },
+  gameOverHighScoreText: {
+    fontSize: isJ6PrimeSize ? 10 : isJ7PrimeSize ? 11 : isSamsungMidRange ? 12 : isLargeAndroidScreen ? 13 : 14,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   gameOverButtonContainer: {
     width: '100%',

@@ -1,22 +1,43 @@
 {
   "expo": {
-    "name": "ORDIX",
-    "slug": "ordix",
-    "version": "1.0.0-beta",
+    "name": "ORDIX - Sayı Sıralama Oyunu",
+    "slug": "ordix-sayi-siralama-oyunu",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ordix",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Eğlenceli sayı sıralama oyunu! Sayıları küçükten büyüğe doğru sırala ve en yüksek skoru elde et. Zihin egzersizi için mükemmel!",
+    "primaryColor": "#87CEEB",
+    "privacy": "public",
+    "platforms": ["ios", "android"],
+    "keywords": ["oyun", "sayı", "sıralama", "matematik", "eğitim", "zeka", "puzzle"],
+    "category": "games",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ordix.sayisiralama",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Bu uygulama kamera kullanmaz",
+        "NSMicrophoneUsageDescription": "Bu uygulama mikrofon kullanmaz"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
-              "adaptiveIcon": {
+      "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#87CEEB"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.ordix.sayisiralama",
+      "versionCode": 1,
+      "permissions": [
+        "VIBRATE"
+      ],
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.ordix.sayisiralama"
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +58,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
     }
   }
 }
