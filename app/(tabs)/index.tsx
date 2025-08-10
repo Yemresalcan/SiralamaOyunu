@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, SafeAreaView, Dimensions, LinearGradient, Platform, PixelRatio, Modal } from 'react-native';
-import { Audio } from 'expo-av';
-import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Modal, PixelRatio, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import UsernameModal from '../components/username-modal';
+import leaderboardService from '../services/leaderboard-service';
 
 
 const { width, height } = Dimensions.get('window');
@@ -1167,7 +1170,7 @@ const HowToPlayScreen = ({ onBack }) => {
 };
 
 // Profesyonel Oyun Menüsü
-const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
+const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
   const titleBounce = useRef(new Animated.Value(1)).current;
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const characterBounce = useRef(new Animated.Value(1)).current;
@@ -1416,13 +1419,31 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, musicEnabled,
              
              <TouchableOpacity 
                style={styles.bottomIcon}
-               onPress={() => playSound('button')}
+               onPress={() => {
+                 playSound('button');
+                 onLeaderboard();
+               }}
              >
                <ExpoLinearGradient
-                 colors={['#E74C3C', '#C0392B', '#F1948A']}
+                 colors={['#9B59B6', '#8E44AD', '#BF55EC']}
                  style={styles.bottomIconGradient}
                >
-                 <Text style={styles.bottomIconText}>🛒</Text>
+                 <Text style={styles.bottomIconText}>🏆</Text>
+               </ExpoLinearGradient>
+             </TouchableOpacity>
+             
+             <TouchableOpacity 
+               style={styles.bottomIcon}
+               onPress={() => {
+                 playSound('button');
+                 onSettings();
+               }}
+             >
+               <ExpoLinearGradient
+                 colors={['#95A5A6', '#7F8C8D', '#BDC3C7']}
+                 style={styles.bottomIconGradient}
+               >
+                 <Text style={styles.bottomIconText}>⚙️</Text>
                </ExpoLinearGradient>
              </TouchableOpacity>
            </View>
@@ -1476,6 +1497,11 @@ export default function GameScreen() {
   const [showBonusTurAlert, setShowBonusTurAlert] = useState(false);
   const [showOyunBittiAlert, setShowOyunBittiAlert] = useState(false);
   const [oyunBittiData, setOyunBittiData] = useState({ score: 0, bonusMessage: '' });
+  
+  // Leaderboard state'leri
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [username, setUsername] = useState('');
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
@@ -1504,6 +1530,15 @@ export default function GameScreen() {
       if (savedTotalGames) {
         setTotalGamesPlayed(parseInt(savedTotalGames));
       }
+      
+      // Kullanıcı verilerini kontrol et
+      const userData = await leaderboardService.getUserData();
+      if (!userData) {
+        // İlk giriş - kullanıcı adı modalını göster
+        setShowUsernameModal(true);
+      } else {
+        setUsername(userData.username);
+      }
     } catch (error) {
       console.log('İstatistikler yüklenemedi:', error);
     }
@@ -1523,6 +1558,12 @@ export default function GameScreen() {
       
       await AsyncStorage.setItem('totalGamesPlayed', newTotalGames.toString());
       setTotalGamesPlayed(newTotalGames);
+      
+      // Leaderboard'a skoru gönder
+      if (username) {
+        await leaderboardService.submitScore(newScore);
+        console.log('📊 Skor leaderboard\'a gönderildi:', newScore);
+      }
       
       return newScore > highScore; // Yeni rekor mu?
     } catch (error) {
@@ -1828,6 +1869,8 @@ export default function GameScreen() {
     return <HowToPlayScreen onBack={backToMenu} />;
   }
 
+  const router = useRouter();
+
   if (currentScreen === 'menu') {
     return (
       <>
@@ -1836,6 +1879,7 @@ export default function GameScreen() {
           onHowToPlay={showHowToPlay}
           onSettings={showSettings}
           onStats={showStats}
+          onLeaderboard={() => router.push('/leaderboard')}
           musicEnabled={musicEnabled}
           onToggleMusic={toggleMusic}
           buttonSound={buttonSound}
@@ -1849,6 +1893,13 @@ export default function GameScreen() {
           onClose={() => setShowStatsModal(false)}
           highScore={highScore}
           totalGamesPlayed={totalGamesPlayed}
+        />
+        <UsernameModal
+          visible={showUsernameModal}
+          onComplete={(username) => {
+            setUsername(username);
+            setShowUsernameModal(false);
+          }}
         />
       </>
     );

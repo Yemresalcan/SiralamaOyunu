@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ORDIX - Sayı Sıralama Oyunu",
-    "slug": "ordix-sayi-siralama-oyunu",
+    "slug": "ordix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,8 +11,19 @@
     "description": "Eğlenceli sayı sıralama oyunu! Sayıları küçükten büyüğe doğru sırala ve en yüksek skoru elde et. Zihin egzersizi için mükemmel!",
     "primaryColor": "#87CEEB",
     "privacy": "public",
-    "platforms": ["ios", "android"],
-    "keywords": ["oyun", "sayı", "sıralama", "matematik", "eğitim", "zeka", "puzzle"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "keywords": [
+      "oyun",
+      "sayı",
+      "sıralama",
+      "matematik",
+      "eğitim",
+      "zeka",
+      "puzzle"
+    ],
     "category": "games",
     "ios": {
       "supportsTablet": true,
@@ -33,9 +44,12 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.ordix.sayisiralama",
-      "versionCode": 1,
+      "versionCode": 2,
       "permissions": [
         "VIBRATE"
+      ],
+      "blockedPermissions": [
+        "RECORD_AUDIO"
       ],
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.ordix.sayisiralama"
     },
@@ -46,6 +60,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -61,8 +81,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "d3d3d717-b2a1-41b5-8b05-3fdd11c4383c"
       }
-    }
+    },
+    "owner": "sundevflower"
   }
 }
