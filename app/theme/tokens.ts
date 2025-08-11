@@ -16,6 +16,10 @@ export const gradients = {
   gold: ['#FFD700', '#FFA500', '#FF8C00'] as const,
   violet: ['#9B59B6', '#8E44AD', '#BF55EC'] as const,
   green: ['#58D68D', '#27AE60', '#7DCEA0'] as const,
+  glass: ['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.1)'] as const,
+  glassBlue: ['rgba(74,144,226,0.8)', 'rgba(30,144,255,0.4)'] as const,
+  glassGreen: ['rgba(88,214,141,0.8)', 'rgba(39,174,96,0.4)'] as const,
+  glassRed: ['rgba(255,71,87,0.9)', 'rgba(255,55,71,0.5)'] as const,
 };
 
 export const radius = {
@@ -34,6 +38,20 @@ export const shadow = {
     shadowRadius: 20,
     elevation: 8,
   },
+  glass: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  glow: {
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 15,
+  },
 };
 
 export const typography = {
@@ -41,6 +59,26 @@ export const typography = {
   subtitle: 16,
   body: 14,
   button: 18,
+};
+
+export const glassmorphism = {
+  backdrop: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  button: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backdropFilter: 'blur(10px)',
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(20px)',
+  },
 };
 
 

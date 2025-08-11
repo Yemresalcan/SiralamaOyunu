@@ -1,14 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Modal, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AchievementPopup } from '../components/achievement-popup';
+import { AchievementsScreen } from '../components/achievements-screen';
 import { AnimatedBackground } from '../components/animated-background';
 import UsernameModal from '../components/username-modal';
+import achievementService, { Achievement } from '../services/achievement-service';
 import leaderboardService from '../services/leaderboard-service';
+import { glassmorphism, gradients, radius, shadow } from '../theme/tokens';
 
 
 const { width, height } = Dimensions.get('window');
@@ -1168,7 +1173,7 @@ const HowToPlayScreen = ({ onBack }) => {
 };
 
 // Profesyonel Oyun Menüsü
-const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
+const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard, onAchievements, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
   const titleBounce = useRef(new Animated.Value(1)).current;
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const characterBounce = useRef(new Animated.Value(1)).current;
@@ -1342,9 +1347,9 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
              styles.mainButtonsContainer,
              { transform: [{ translateY: buttonFloatY }] }
            ]}>
-                           {/* OYNA Butonu */}
+                           {/* OYNA Butonu - Glassmorphism */}
                          <TouchableOpacity 
-             style={styles.playButton} 
+             style={styles.playButtonGlass} 
              onPress={() => {
                playSound('button');
                onStartGame();
@@ -1352,32 +1357,37 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
              activeOpacity={0.8}
              hitSlop={isAndroid ? { top: 10, bottom: 10, left: 10, right: 10 } : undefined}
            >
-                <ExpoLinearGradient
-                  colors={['#FF4757', '#FF3742', '#FF6B7A']}
-                  style={styles.playButtonGradient}
-                >
-                  <View style={styles.buttonShadow} />
-                  <Text style={styles.playButtonText}>OYNA</Text>
-                </ExpoLinearGradient>
+                <BlurView intensity={30} style={styles.playButtonBlur}>
+                  <ExpoLinearGradient
+                    colors={gradients.glassRed}
+                    style={styles.playButtonGradientGlass}
+                  >
+                    <View style={styles.glassShine} />
+                    <Text style={styles.playButtonTextGlass}>🎮 OYNA</Text>
+                  </ExpoLinearGradient>
+                </BlurView>
               </TouchableOpacity>
 
+              {/* Boşluk */}
+              <View style={styles.buttonSpacer} />
 
-
-              {/* AYARLAR Butonu */}
+              {/* AYARLAR Butonu - Glassmorphism */}
               <TouchableOpacity 
-                style={styles.settingsButton}
+                style={styles.settingsButtonGlass}
                 onPress={() => {
                   playSound('button');
                   onSettings();
                 }}
               >
-                <ExpoLinearGradient
-                  colors={['#58D68D', '#27AE60', '#7DCEA0']}
-                  style={styles.settingsGradient}
-                >
-                  <View style={styles.buttonShadow} />
-                  <Text style={styles.settingsButtonText}>⚙️ AYARLAR</Text>
-                </ExpoLinearGradient>
+                <BlurView intensity={30} style={styles.settingsButtonBlur}>
+                  <ExpoLinearGradient
+                    colors={gradients.glassGreen}
+                    style={styles.settingsGradientGlass}
+                  >
+                    <View style={styles.glassShine} />
+                    <Text style={styles.settingsButtonTextGlass}>⚙️ AYARLAR</Text>
+                  </ExpoLinearGradient>
+                </BlurView>
               </TouchableOpacity>
            </Animated.View>
 
@@ -1387,14 +1397,29 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
                style={styles.bottomIcon}
                onPress={() => {
                  playSound('button');
-                 onStats();
+                 onLeaderboard();
                }}
              >
                <ExpoLinearGradient
-                 colors={['#F39C12', '#E67E22', '#F4D03F']}
+                 colors={['#FF6B35', '#F7931E', '#FFD700']}
                  style={styles.bottomIconGradient}
                >
-                 <Text style={styles.bottomIconText}>📊</Text>
+                 <Text style={styles.bottomIconText}>🏆</Text>
+               </ExpoLinearGradient>
+             </TouchableOpacity>
+
+             <TouchableOpacity 
+               style={styles.bottomIcon}
+               onPress={() => {
+                 playSound('button');
+                 onAchievements();
+               }}
+             >
+               <ExpoLinearGradient
+                 colors={gradients.gold}
+                 style={styles.bottomIconGradient}
+               >
+                 <Text style={styles.bottomIconText}>🎖️</Text>
                </ExpoLinearGradient>
              </TouchableOpacity>
              
@@ -1410,21 +1435,6 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
                  style={styles.bottomIconGradient}
                >
                  <Text style={styles.bottomIconText}>📚</Text>
-               </ExpoLinearGradient>
-             </TouchableOpacity>
-             
-             <TouchableOpacity 
-               style={styles.bottomIcon}
-               onPress={() => {
-                 playSound('button');
-                 onLeaderboard();
-               }}
-             >
-               <ExpoLinearGradient
-                 colors={['#9B59B6', '#8E44AD', '#BF55EC']}
-                 style={styles.bottomIconGradient}
-               >
-                 <Text style={styles.bottomIconText}>🏆</Text>
                </ExpoLinearGradient>
              </TouchableOpacity>
              
@@ -1464,7 +1474,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
 };
 
 export default function GameScreen() {
-  const [currentScreen, setCurrentScreen] = useState('loading'); // 'loading', 'menu', 'game', 'howToPlay', 'settings'
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'loading', 'menu', 'game', 'howToPlay', 'settings', 'achievements'
   const [numberList, setNumberList] = useState([]);
   const [numbersToPlace, setNumbersToPlace] = useState([]);
   const [currentNumber, setCurrentNumber] = useState(null);
@@ -1482,6 +1492,35 @@ export default function GameScreen() {
   // Ayarlar state'leri
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [hapticEnabled, setHapticEnabled] = useState(true);
+  
+  // Achievement state'leri
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+  const [showAchievementPopup, setShowAchievementPopup] = useState(false);
+
+  // Achievement kontrolü
+  const checkAndShowAchievements = async (gameData: {
+    score: number;
+    gameTime: number;
+    isPerfect: boolean;
+    won: boolean;
+  }) => {
+    try {
+      const newAchievements = await achievementService.updateGameStats(gameData);
+      
+      if (newAchievements.length > 0) {
+        // İlk başarıyı göster (birden fazla varsa sırayla göstereceğiz)
+        setNewAchievement(newAchievements[0]);
+        setShowAchievementPopup(true);
+        
+        // Haptic feedback
+        if (hapticEnabled) {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    } catch (error) {
+      console.error('Achievement kontrolü yapılamadı:', error);
+    }
+  };
   
   // Oyun bitti ekranı için state
   const [showGameOverScreen, setShowGameOverScreen] = useState(false);
@@ -1681,6 +1720,10 @@ export default function GameScreen() {
     setShowStatsModal(true);
   };
 
+  const showAchievements = () => {
+    setCurrentScreen('achievements');
+  };
+
   const backToMenu = () => {
     setCurrentScreen('menu');
     setGameCount(0);
@@ -1789,10 +1832,20 @@ export default function GameScreen() {
         setGameOver(true);
         setCurrentNumber(null);
         const bonusMessage = isEasyRound ? " 🎉 (Bonus Tur Tamamlandı!)" : "";
+        const finalScore = score + points;
         setOyunBittiData({ 
-          score: score + points, 
+          score: finalScore, 
           bonusMessage: bonusMessage 
         });
+        
+        // Achievement kontrolü - başarılı oyun
+        checkAndShowAchievements({
+          score: finalScore,
+          gameTime: 60, // Tahmini oyun süresi
+          isPerfect: true,
+          won: true
+        });
+        
         setShowOyunBittiAlert(true);
       } else {
         setCurrentNumber(remainingNumbers[0]);
@@ -1805,6 +1858,14 @@ export default function GameScreen() {
       
       // Skorları kaydet
       saveGameStats(score);
+      
+      // Achievement kontrolü - başarısız oyun
+      checkAndShowAchievements({
+        score: score,
+        gameTime: 60, // Tahmini oyun süresi
+        isPerfect: false,
+        won: false
+      });
       
       setShowGameOverScreen(true);
       console.log('❌ Yanlış yerleştirme!');
@@ -1865,6 +1926,10 @@ export default function GameScreen() {
     return <HowToPlayScreen onBack={backToMenu} />;
   }
 
+  if (currentScreen === 'achievements') {
+    return <AchievementsScreen onClose={backToMenu} />;
+  }
+
   const router = useRouter();
 
   if (currentScreen === 'menu') {
@@ -1876,6 +1941,7 @@ export default function GameScreen() {
           onSettings={showSettings}
           onStats={showStats}
           onLeaderboard={() => router.push('/leaderboard')}
+          onAchievements={showAchievements}
           musicEnabled={musicEnabled}
           onToggleMusic={toggleMusic}
           buttonSound={buttonSound}
@@ -2090,6 +2156,16 @@ A = π r²    V = ⁴⁄₃πr³`}
           />
         </Modal>
       )}
+
+      {/* Achievement Popup */}
+      <AchievementPopup
+        achievement={newAchievement}
+        visible={showAchievementPopup}
+        onClose={() => {
+          setShowAchievementPopup(false);
+          setNewAchievement(null);
+        }}
+      />
     </View>
   );
 }
@@ -3546,6 +3622,90 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+
+  // Glassmorphism Button Styles
+  playButtonGlass: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    width: '85%',
+    ...shadow.glow,
+    shadowColor: '#FF4757',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+  },
+  playButtonBlur: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...glassmorphism.button,
+    borderColor: 'rgba(255,71,87,0.6)',
+    borderWidth: 2,
+  },
+  playButtonGradientGlass: {
+    paddingVertical: 18,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.xl,
+    position: 'relative',
+    minHeight: 65,
+  },
+  playButtonTextGlass: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+
+  settingsButtonGlass: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    width: '75%',
+    ...shadow.glass,
+    shadowColor: '#27AE60',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+  },
+  settingsButtonBlur: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    ...glassmorphism.button,
+    borderColor: 'rgba(88,214,141,0.6)',
+    borderWidth: 2,
+  },
+  settingsGradientGlass: {
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.lg,
+    position: 'relative',
+  },
+  settingsButtonTextGlass: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  glassShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: radius.lg,
+  },
+  
+  buttonSpacer: {
+    height: 20,
   },
 });
 

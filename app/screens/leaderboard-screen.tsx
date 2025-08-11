@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -15,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedBackground } from '../components/animated-background';
 import leaderboardService, { LeaderboardEntry } from '../services/leaderboard-service';
-import { colors, gradients, radius, shadow } from '../theme/tokens';
+import { glassmorphism, gradients, radius, shadow } from '../theme/tokens';
 
 const { width, height } = Dimensions.get('window');
 
@@ -76,27 +77,32 @@ export function LeaderboardScreen({ onClose, currentUsername }: LeaderboardScree
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <LinearGradient
-        colors={['#FFD700', '#FFA500', '#FF8C00']}
-        style={styles.headerGradient}
-      >
-        <Text style={styles.headerTitle}>🏆 Lider Tablosu 🏆</Text>
-        
-        {currentUsername && userHighScore > 0 && (
-          <View style={styles.userStatsContainer}>
-            <View style={styles.userStatBox}>
-              <Text style={styles.userStatLabel}>Sıralama</Text>
-              <Text style={styles.userStatValue}>
-                {getRankEmoji(userRank)} #{userRank}
-              </Text>
-            </View>
-            <View style={styles.userStatBox}>
-              <Text style={styles.userStatLabel}>En Yüksek</Text>
-              <Text style={styles.userStatValue}>⭐ {userHighScore}</Text>
-            </View>
-          </View>
-        )}
-      </LinearGradient>
+      <View style={styles.headerContainer}>
+        <BlurView intensity={30} style={styles.headerBlur}>
+          <LinearGradient
+            colors={gradients.gold}
+            style={styles.headerGradient}
+          >
+            <View style={styles.glassShine} />
+            <Text style={styles.headerTitle}>🏆 Lider Tablosu 🏆</Text>
+            
+            {currentUsername && userHighScore > 0 && (
+              <View style={styles.userStatsContainer}>
+                <View style={styles.userStatBox}>
+                  <Text style={styles.userStatLabel}>Sıralama</Text>
+                  <Text style={styles.userStatValue}>
+                    {getRankEmoji(userRank)} #{userRank}
+                  </Text>
+                </View>
+                <View style={styles.userStatBox}>
+                  <Text style={styles.userStatLabel}>En Yüksek</Text>
+                  <Text style={styles.userStatValue}>⭐ {userHighScore}</Text>
+                </View>
+              </View>
+            )}
+          </LinearGradient>
+        </BlurView>
+      </View>
     </View>
   );
 
@@ -105,37 +111,54 @@ export function LeaderboardScreen({ onClose, currentUsername }: LeaderboardScree
     const isCurrentUser = item.username === currentUsername;
     const isTopThree = rank <= 3;
 
+    const getItemColors = () => {
+      if (isTopThree) {
+        return ['rgba(255, 215, 0, 0.8)', 'rgba(255, 165, 0, 0.4)'];
+      }
+      if (isCurrentUser) {
+        return ['rgba(52, 152, 219, 0.7)', 'rgba(52, 152, 219, 0.3)'];
+      }
+      return ['rgba(0, 0, 0, 0.6)', 'rgba(0, 0, 0, 0.2)'];
+    };
+
     return (
-      <View style={[
-        styles.scoreItem,
-        isCurrentUser && styles.currentUserItem,
-        isTopThree && styles.topThreeItem
-      ]}>
-        <View style={styles.rankContainer}>
-          <Text style={[styles.rankText, isTopThree && styles.topThreeRank]}>
-            {rank <= 3 ? getRankEmoji(rank) : `#${rank}`}
-          </Text>
-        </View>
-        
-        <View style={styles.userInfo}>
-          <Text style={[
-            styles.username,
-            isCurrentUser && styles.currentUsername,
-            isTopThree && styles.topThreeUsername
-          ]}>
-            {item.username}
-            {isCurrentUser && ' (Sen)'}
-          </Text>
-        </View>
-        
-        <View style={styles.scoreContainer}>
-          <Text style={[
-            styles.score,
-            isTopThree && styles.topThreeScore
-          ]}>
-            {item.score}
-          </Text>
-        </View>
+      <View style={styles.scoreItemContainer}>
+        <BlurView intensity={15} style={styles.scoreItemBlur}>
+          <LinearGradient
+            colors={getItemColors()}
+            style={[
+              styles.scoreItem,
+              isCurrentUser && styles.currentUserItem,
+              isTopThree && styles.topThreeItem
+            ]}
+          >
+            <View style={styles.rankContainer}>
+              <Text style={[styles.rankText, isTopThree && styles.topThreeRank]}>
+                {rank <= 3 ? getRankEmoji(rank) : `#${rank}`}
+              </Text>
+            </View>
+            
+            <View style={styles.userInfo}>
+              <Text style={[
+                styles.username,
+                isCurrentUser && styles.currentUsername,
+                isTopThree && styles.topThreeUsername
+              ]}>
+                {item.username}
+                {isCurrentUser && ' (Sen)'}
+              </Text>
+            </View>
+            
+            <View style={styles.scoreContainer}>
+              <Text style={[
+                styles.score,
+                isTopThree && styles.topThreeScore
+              ]}>
+                {item.score}
+              </Text>
+            </View>
+          </LinearGradient>
+        </BlurView>
       </View>
     );
   };
@@ -155,11 +178,13 @@ export function LeaderboardScreen({ onClose, currentUsername }: LeaderboardScree
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.topBar}>
           <TouchableOpacity
-            style={styles.closeButton}
+            style={styles.closeButtonContainer}
             onPress={onClose}
             activeOpacity={0.8}
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <BlurView intensity={20} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </BlurView>
           </TouchableOpacity>
         </View>
 
@@ -205,13 +230,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  closeButton: {
+  closeButtonContainer: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    overflow: 'hidden',
+    ...shadow.glass,
+  },
+  closeButton: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    ...glassmorphism.button,
+    borderRadius: 22,
   },
   closeButtonText: {
     color: 'white',
@@ -221,16 +253,31 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
   },
+  headerContainer: {
+    marginHorizontal: 15,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...shadow.glow,
+    shadowColor: '#FFD700',
+  },
+  headerBlur: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...glassmorphism.card,
+  },
   headerGradient: {
     padding: 20,
-    borderRadius: radius.lg,
-    marginHorizontal: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    position: 'relative',
+  },
+  glassShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: radius.xl,
   },
   headerTitle: {
     fontSize: 28,
@@ -268,25 +315,39 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 30,
   },
+  scoreItemContainer: {
+    marginHorizontal: 15,
+    marginVertical: 5,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    ...shadow.card,
+  },
+  scoreItemBlur: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    ...glassmorphism.card,
+  },
   scoreItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    marginHorizontal: 15,
-    marginVertical: 5,
     padding: 15,
-    borderRadius: radius.md,
-    ...shadow.card,
+    borderRadius: radius.lg,
   },
   currentUserItem: {
-    backgroundColor: 'rgba(52, 152, 219, 0.2)',
     borderWidth: 2,
-    borderColor: '#3498DB',
+    borderColor: 'rgba(52, 152, 219, 0.8)',
+    shadowColor: '#3498DB',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   topThreeItem: {
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.8)',
+    shadowColor: '#FFD700',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   rankContainer: {
     width: 50,
@@ -295,7 +356,10 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#34495E',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   topThreeRank: {
     fontSize: 24,
@@ -307,14 +371,17 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   currentUsername: {
-    color: '#3498DB',
+    color: '#87CEEB',
     fontWeight: 'bold',
   },
   topThreeUsername: {
-    color: '#F39C12',
+    color: '#FFD700',
     fontWeight: 'bold',
   },
   scoreContainer: {
@@ -324,11 +391,17 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#E74C3C',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   topThreeScore: {
-    color: '#F39C12',
+    color: '#FFD700',
     fontSize: 22,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
   },
   loadingContainer: {
     flex: 1,
