@@ -13,7 +13,9 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AnimatedBackground } from '../components/animated-background';
 import leaderboardService, { LeaderboardEntry } from '../services/leaderboard-service';
+import { colors, gradients, radius, shadow } from '../theme/tokens';
 
 const { width, height } = Dimensions.get('window');
 
@@ -146,10 +148,10 @@ export function LeaderboardScreen({ onClose, currentUsername }: LeaderboardScree
     </View>
   );
 
-  const gradientColors = ['#87CEEB', '#98D8E8', '#B0E0E6'] as const;
+  const gradientColors = gradients.sky;
 
   return (
-    <LinearGradient colors={gradientColors} style={styles.container}>
+    <AnimatedBackground>
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.topBar}>
           <TouchableOpacity
@@ -186,7 +188,7 @@ export function LeaderboardScreen({ onClose, currentUsername }: LeaderboardScree
           />
         )}
       </SafeAreaView>
-    </LinearGradient>
+    </AnimatedBackground>
   );
 }
 
@@ -221,7 +223,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     padding: 20,
-    borderRadius: 20,
+    borderRadius: radius.lg,
     marginHorizontal: 15,
     alignItems: 'center',
     shadowColor: '#000',
@@ -269,16 +271,12 @@ const styles = StyleSheet.create({
   scoreItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: colors.surface,
     marginHorizontal: 15,
     marginVertical: 5,
     padding: 15,
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: radius.md,
+    ...shadow.card,
   },
   currentUserItem: {
     backgroundColor: 'rgba(52, 152, 219, 0.2)',

@@ -5,7 +5,8 @@ import { Image } from 'expo-image';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Modal, PixelRatio, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Modal, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AnimatedBackground } from '../components/animated-background';
 import UsernameModal from '../components/username-modal';
 import leaderboardService from '../services/leaderboard-service';
 
@@ -483,10 +484,7 @@ const GameOverScreen = ({ score, highScore, isNewRecord, onRestart, onBackToMenu
 
   return (
     <View style={styles.gameOverContainer}>
-      <ExpoLinearGradient
-        colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
-        style={styles.gameOverBackground}
-      >
+      <AnimatedBackground>
         {/* Arka plan bulutları */}
         <Text style={[styles.cloud, styles.gameOverCloud1]}>☁️</Text>
         <Text style={[styles.cloud, styles.gameOverCloud2]}>☁️</Text>
@@ -579,7 +577,7 @@ const GameOverScreen = ({ score, highScore, isNewRecord, onRestart, onBackToMenu
             <Text style={styles.gameOverDeco}>⭐</Text>
           </View>
         </Animated.View>
-      </ExpoLinearGradient>
+      </AnimatedBackground>
     </View>
   );
 };
@@ -1274,12 +1272,9 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
     outputRange: ['0deg', '360deg'],
   });
 
-        return (
+    return (
      <View style={styles.menuContainer}>
-       <ExpoLinearGradient
-         colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
-         style={styles.menuBackground}
-       >
+       <AnimatedBackground>
          {/* Arka Plan Bulutları */}
          <View style={styles.cloudsContainer}>
            <Text style={styles.cloud}>☁️</Text>
@@ -1314,7 +1309,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
          </TouchableOpacity>
 
          <View style={styles.menuContent}>
-           {/* Oyun Başlığı */}
+            {/* Oyun Başlığı ve Versiyon Rozeti */}
            <Animated.View style={[
              styles.titleContainer,
              { transform: [{ scale: titleBounce }] }
@@ -1323,7 +1318,8 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
                colors={['#FF6B35', '#F7931E', '#FFD700']}
                style={styles.titleBackground}
              >
-               <Text style={styles.gameTitle}>ORDIX</Text>
+                <Text style={styles.gameTitle}>ORDIX</Text>
+               
              </ExpoLinearGradient>
            </Animated.View>
 
@@ -1448,9 +1444,9 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
              </TouchableOpacity>
            </View>
 
-           {/* Versiyon Bilgisi */}
-                     <View style={styles.versionContainer}>
-            <Text style={styles.versionText}>Versiyon 1.0.0</Text>
+          {/* Versiyon Bilgisi */}
+          <View style={styles.versionContainer}>
+            <Text style={styles.versionText}>Sürüm 1.1</Text>
             <TouchableOpacity 
               style={styles.privacyButton}
               onPress={() => {
@@ -1462,7 +1458,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
             </TouchableOpacity>
           </View>
          </View>
-       </ExpoLinearGradient>
+       </AnimatedBackground>
      </View>
    );
 };
@@ -1944,7 +1940,7 @@ export default function GameScreen() {
   }
 
      return (
-     <SafeAreaView style={styles.container}>
+     <View style={styles.container}>
        <ExpoLinearGradient
          colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
          style={styles.gameBackground}
@@ -2094,7 +2090,7 @@ A = π r²    V = ⁴⁄₃πr³`}
           />
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -3135,7 +3131,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: responsiveSize.containerPadding - 5,
+    paddingTop: responsiveSize.containerPadding + 35,
     paddingHorizontal: responsiveSize.containerPadding,
     flexDirection: 'row',
     alignItems: 'center',
