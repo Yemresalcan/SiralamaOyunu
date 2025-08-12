@@ -13,7 +13,7 @@ import { AnimatedBackground } from '../components/animated-background';
 import UsernameModal from '../components/username-modal';
 import achievementService, { Achievement } from '../services/achievement-service';
 import leaderboardService from '../services/leaderboard-service';
-import { glassmorphism, gradients, radius, shadow } from '../theme/tokens';
+import { bubble, glassmorphism, gradients, radius, shadow } from '../theme/tokens';
 
 
 const { width, height } = Dimensions.get('window');
@@ -1043,6 +1043,420 @@ const StatsScreen = ({ onBack, highScore, totalGamesPlayed }) => {
   return null; // Bu kısım artık gösterilmeyecek
 };
 
+// Bubble interface
+interface Bubble {
+  id: number;
+  number: number;
+  colors: string[];
+  position: { x: number; y: number };
+  scale: Animated.Value;
+  isPopped: boolean;
+}
+
+interface BubbleSortGameProps {
+  onBack: () => void;
+  buttonSound: any;
+  soundEnabled: boolean;
+  hapticEnabled: boolean;
+}
+
+// Baloncuk Sıralama Oyunu
+const BubbleSortGame = ({ onBack, buttonSound, soundEnabled, hapticEnabled }: BubbleSortGameProps) => {
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [nextNumber, setNextNumber] = useState(1);
+  const [level, setLevel] = useState(1);
+  const [gameEndReason, setGameEndReason] = useState<'success' | 'timeout' | 'wrong'>('success');
+  
+  const animationValues = useRef<{[key: string]: Animated.Value}>({}).current;
+
+  // Ses çalma fonksiyonu
+  const playGameSound = async (type: string) => {
+    try {
+      if (type === 'correct' && soundEnabled && buttonSound) {
+        await buttonSound.replayAsync();
+      }
+      
+      if (hapticEnabled) {
+        if (type === 'correct') {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } else if (type === 'wrong') {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+      }
+    } catch (error) {
+      console.log('Oyun ses efekti çalınamadı:', error);
+    }
+  };
+
+  // Çakışma kontrolü fonksiyonu
+  const isPositionValid = (newPos: {x: number, y: number}, existingPositions: {x: number, y: number}[], minDistance = 90) => {
+    return existingPositions.every(pos => {
+      const distance = Math.sqrt(
+        Math.pow(newPos.x - pos.x, 2) + Math.pow(newPos.y - pos.y, 2)
+      );
+      return distance >= minDistance;
+    });
+  };
+
+  // Rastgele pozisyon üret (çakışmasız)
+  const generateSafePosition = (existingPositions: {x: number, y: number}[]) => {
+    const gameAreaWidth = width - 160; // Margin bırak
+    const gameAreaHeight = height * 0.5; // Oyun alanı yüksekliği
+    const startY = height * 0.15; // Üst başlık için boşluk
+    
+    // İlk 20 deneme rastgele
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const newPos = {
+        x: Math.random() * gameAreaWidth + 80,
+        y: Math.random() * gameAreaHeight + startY,
+      };
+      
+      if (isPositionValid(newPos, existingPositions)) {
+        return newPos;
+      }
+    }
+    
+    // Rastgele bulamazsa grid sistemi
+    const cols = Math.ceil(Math.sqrt(existingPositions.length + 1));
+    const rows = Math.ceil((existingPositions.length + 1) / cols);
+    const cellWidth = gameAreaWidth / cols;
+    const cellHeight = gameAreaHeight / rows;
+    
+    const gridIndex = existingPositions.length;
+    const row = Math.floor(gridIndex / cols);
+    const col = gridIndex % cols;
+    
+    return {
+      x: col * cellWidth + cellWidth / 2 + 80,
+      y: row * cellHeight + cellHeight / 2 + startY,
+    };
+  };
+
+  // Rastgele baloncuk oluştur
+  const generateBubbles = (bubbleCount: number): Bubble[] => {
+    const numbers = [];
+    for (let i = 1; i <= bubbleCount; i++) {
+      numbers.push(i);
+    }
+    
+    // Karıştır
+    const shuffled = numbers.sort(() => Math.random() - 0.5);
+    const positions: {x: number, y: number}[] = [];
+    
+    return shuffled.map((number, index) => {
+      const colors = Object.values(bubble.colors);
+      const colorPair = colors[Math.floor(Math.random() * colors.length)];
+      
+      // Her baloncuk için animasyon value'ları
+      if (!animationValues[`bubble_${index}_scale`]) {
+        animationValues[`bubble_${index}_scale`] = new Animated.Value(1);
+        animationValues[`bubble_${index}_x`] = new Animated.Value(0);
+        animationValues[`bubble_${index}_y`] = new Animated.Value(0);
+      }
+      
+      // Güvenli pozisyon oluştur
+      const position = generateSafePosition(positions);
+      positions.push(position);
+      
+      return {
+        id: index,
+        number,
+        colors: colorPair,
+        position,
+        scale: animationValues[`bubble_${index}_scale`],
+        isPopped: false,
+      };
+    });
+  };
+
+  // Oyunu başlat
+  const startBubbleGame = () => {
+    const bubbleCount = Math.min(4 + level, 15); // Level 1: 5 baloncuk, Level 2: 6 baloncuk... Max 15
+    setBubbles(generateBubbles(bubbleCount));
+    setGameStarted(true);
+    setGameOver(false);
+    setScore(0);
+    setNextNumber(1);
+    // Level arttıkça süre azalır: Level 1: 45sn, Level 2: 40sn, Level 3: 35sn...minimum 15sn
+    setTimeLeft(Math.max(50 - (level * 5), 15)); 
+  };
+
+  // Baloncuğa tıkla
+  const popBubble = async (bubble: Bubble) => {
+    if (gameOver || !gameStarted || bubble.isPopped) return;
+
+    if (bubble.number === nextNumber) {
+      // Doğru sıralama
+      await playGameSound('correct');
+      
+      // Baloncuk patlatıldı - animasyon yok, sadece işaretle
+      
+      // Baloncuğu işaretle
+      setBubbles(prev => prev.map(b => 
+        b.id === bubble.id ? { ...b, isPopped: true } : b
+      ));
+      
+      setScore(prev => prev + (10 * level));
+      setNextNumber(prev => prev + 1);
+      
+      // Tüm baloncuklar patlatıldı mı?
+      const remainingBubbles = bubbles.filter(b => !b.isPopped && b.id !== bubble.id);
+      if (remainingBubbles.length === 0) {
+        // Oyunu başarıyla tamamladı - level artır!
+        setGameEndReason('success');
+        setLevel(prev => prev + 1);
+        setGameOver(true);
+        setGameStarted(false);
+      }
+      
+    } else {
+      // Yanlış sıralama - oyunu bitir
+      await playGameSound('wrong');
+      setGameEndReason('wrong');
+      setGameOver(true);
+      setGameStarted(false);
+    }
+  };
+
+  // Süre sayacı
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (gameStarted && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            setGameEndReason('timeout');
+            setGameOver(true);
+            setGameStarted(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [gameStarted, timeLeft]);
+
+  // Baloncuk sürekli hareket animasyonu
+  useEffect(() => {
+    if (gameStarted && !gameOver) {
+      bubbles.forEach((bubble, index) => {
+        if (!bubble.isPopped) {
+          const xAnim = animationValues[`bubble_${index}_x`];
+          const yAnim = animationValues[`bubble_${index}_y`];
+          
+          // Sürekli hareket animasyonu
+          const moveAnimation = () => {
+            const speed = Math.max(4000 - (level * 150), 1500); // Level arttıkça daha hızlı ama daha yavaş başlar
+            const range = 25 + (level * 3); // Level arttıkça daha geniş hareket ama daha kontrollü
+            
+            Animated.parallel([
+              // X ekseni hareket
+              Animated.sequence([
+                Animated.timing(xAnim, {
+                  toValue: (Math.random() - 0.5) * range,
+                  duration: speed + Math.random() * 1000,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(xAnim, {
+                  toValue: (Math.random() - 0.5) * range,
+                  duration: speed + Math.random() * 1000,
+                  useNativeDriver: true,
+                }),
+              ]),
+              // Y ekseni hareket
+              Animated.sequence([
+                Animated.timing(yAnim, {
+                  toValue: (Math.random() - 0.5) * range,
+                  duration: speed + Math.random() * 800,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(yAnim, {
+                  toValue: (Math.random() - 0.5) * range,
+                  duration: speed + Math.random() * 800,
+                  useNativeDriver: true,
+                }),
+              ]),
+              // Scale animasyonu (nefes alma)
+              Animated.sequence([
+                Animated.timing(bubble.scale, {
+                  toValue: 1.08,
+                  duration: speed / 2,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(bubble.scale, {
+                  toValue: 0.95,
+                  duration: speed / 2,
+                  useNativeDriver: true,
+                }),
+              ]),
+            ]).start(() => {
+              if (!bubble.isPopped && gameStarted && !gameOver) {
+                moveAnimation();
+              }
+            });
+          };
+          
+          moveAnimation();
+        }
+      });
+    }
+  }, [bubbles, gameStarted, gameOver, level]);
+
+  return (
+    <View style={styles.bubbleSortContainer}>
+      <AnimatedBackground>
+        {/* Header */}
+        <View style={styles.bubbleHeader}>
+          <TouchableOpacity style={styles.bubbleBackButton} onPress={onBack}>
+            <ExpoLinearGradient
+              colors={gradients.glassRed}
+              style={styles.bubbleBackButtonGradient}
+            >
+              <Text style={styles.bubbleBackText}>← Ana Menü</Text>
+            </ExpoLinearGradient>
+          </TouchableOpacity>
+          
+          <View style={styles.bubbleGameInfo}>
+            <Text style={styles.bubbleScore}>Skor: {score}</Text>
+            <Text style={styles.bubbleTimer}>⏱️ {timeLeft}s</Text>
+            <Text style={styles.bubbleLevel}>Level: {level}</Text>
+          </View>
+        </View>
+
+        {/* Oyun Alanı */}
+        <View style={styles.bubbleGameArea}>
+          {!gameStarted && !gameOver && (
+            <View style={styles.bubbleStartScreen}>
+              <Text style={styles.bubbleTitle}>🎪 ÇILGIN SIRALAMA</Text>
+              <Text style={styles.bubbleInstructions}>
+                {level === 1 
+                  ? `${4 + level} sayıyı küçükten büyüğe sırayla patlatın!` 
+                  : `Level ${level}: ${4 + level} sayıyı sırayla patlatın!`}
+                {'\n'}Süre: {Math.max(50 - (level * 5), 15)} saniye
+                {'\n'}Yanlış sırayla tıklarsanız oyun biter.
+              </Text>
+              <TouchableOpacity style={styles.bubbleStartButton} onPress={startBubbleGame}>
+                <ExpoLinearGradient
+                  colors={gradients.glassBlue}
+                  style={styles.bubbleStartButtonGradient}
+                >
+                  <Text style={styles.bubbleStartButtonText}>BAŞLA (Level {level})</Text>
+                </ExpoLinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {gameStarted && (
+            <>
+              <View style={styles.nextNumberIndicator}>
+                <Text style={styles.nextNumberText}>Sıradaki: {nextNumber}</Text>
+              </View>
+              
+              {bubbles.map(bubble => (
+                <Animated.View
+                  key={bubble.id}
+                  style={[
+                    styles.bubbleItem,
+                    {
+                      left: bubble.position.x,
+                      top: bubble.position.y,
+                      transform: [
+                        { scale: bubble.isPopped ? 1 : bubble.scale },
+                        { 
+                          translateX: bubble.isPopped ? 0 : 
+                            animationValues[`bubble_${bubble.id}_x`] || 0 
+                        },
+                        { 
+                          translateY: bubble.isPopped ? 0 : 
+                            animationValues[`bubble_${bubble.id}_y`] || 0 
+                        },
+                      ],
+                      opacity: bubble.isPopped ? 0.4 : 1,
+                    }
+                  ]}
+                >
+                  <TouchableOpacity 
+                    onPress={() => popBubble(bubble)}
+                    disabled={bubble.isPopped}
+                    activeOpacity={bubble.isPopped ? 1 : 0.6}
+                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                    style={{ zIndex: 100 }}
+                  >
+                    <ExpoLinearGradient
+                      colors={bubble.colors}
+                      style={[styles.bubbleGradient, bubble.isPopped && { opacity: 0.5 }]}
+                    >
+                      <Text style={[styles.bubbleNumber, bubble.isPopped && { opacity: 0.7 }]}>
+                        {bubble.number}
+                      </Text>
+                    </ExpoLinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              ))}
+            </>
+          )}
+
+          {gameOver && (
+            <View style={styles.bubbleGameOverScreen}>
+              <Text style={styles.bubbleGameOverTitle}>
+                {gameEndReason === 'success' ? '🎉 Tebrikler!' : 
+                 gameEndReason === 'timeout' ? '⏰ Süre Bitti!' : '💥 Yanlış Sıra!'}
+              </Text>
+              <Text style={styles.bubbleGameOverScore}>Skorunuz: {score}</Text>
+              <Text style={styles.bubbleGameOverLevel}>
+                {gameEndReason === 'success' ? `Level ${level} başarıyla tamamlandı!` : 
+                 gameEndReason === 'timeout' ? `Level ${level} başarısız - Süre doldu!` : 
+                 `Level ${level} başarısız - Yanlış sıralama!`}
+              </Text>
+              
+              <View style={styles.bubbleGameOverButtons}>
+                <TouchableOpacity style={styles.bubbleRestartButton} onPress={startBubbleGame}>
+                  <ExpoLinearGradient
+                    colors={gradients.glassGreen}
+                    style={styles.bubbleRestartButtonGradient}
+                  >
+                    <Text style={styles.bubbleRestartButtonText}>
+                      {gameEndReason === 'success' ? 'SONRAKİ LEVEL' : 'TEKRAR DENE'}
+                    </Text>
+                  </ExpoLinearGradient>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.bubbleMenuButton} onPress={() => {
+                  setLevel(1); // Level'ı sıfırla
+                  setScore(0);
+                  setGameOver(false);
+                  setGameStarted(false);
+                }}>
+                  <ExpoLinearGradient
+                    colors={gradients.glassBlue}
+                    style={styles.bubbleMenuButtonGradient}
+                  >
+                    <Text style={styles.bubbleMenuButtonText}>BAŞTAN BAŞLA</Text>
+                  </ExpoLinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.bubbleMenuButton} onPress={onBack}>
+                  <ExpoLinearGradient
+                    colors={gradients.glassRed}
+                    style={styles.bubbleMenuButtonGradient}
+                  >
+                    <Text style={styles.bubbleMenuButtonText}>ANA MENÜ</Text>
+                  </ExpoLinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </AnimatedBackground>
+    </View>
+  );
+};
+
 const HowToPlayScreen = ({ onBack }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -1173,7 +1587,7 @@ const HowToPlayScreen = ({ onBack }) => {
 };
 
 // Profesyonel Oyun Menüsü
-const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard, onAchievements, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
+const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onStats, onLeaderboard, onAchievements, musicEnabled, onToggleMusic, buttonSound, soundEnabled, hapticEnabled, highScore, totalGamesPlayed }) => {
   const titleBounce = useRef(new Animated.Value(1)).current;
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const characterBounce = useRef(new Animated.Value(1)).current;
@@ -1363,7 +1777,31 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
                     style={styles.playButtonGradientGlass}
                   >
                     <View style={styles.glassShine} />
-                    <Text style={styles.playButtonTextGlass}>🎮 OYNA</Text>
+                    <Text style={styles.playButtonTextGlass}>🎮 SIRAYLA</Text>
+                  </ExpoLinearGradient>
+                </BlurView>
+              </TouchableOpacity>
+
+              {/* Boşluk */}
+              <View style={styles.buttonSpacer} />
+
+              {/* HIZ SIRALA Butonu - Glassmorphism */}
+              <TouchableOpacity 
+                style={styles.playButtonGlass}
+                onPress={() => {
+                  playSound('button');
+                  onStartBubbleSort();
+                }}
+                activeOpacity={0.8}
+                hitSlop={isAndroid ? { top: 10, bottom: 10, left: 10, right: 10 } : undefined}
+              >
+                <BlurView intensity={30} style={styles.playButtonBlur}>
+                  <ExpoLinearGradient
+                    colors={gradients.glassBlue}
+                    style={styles.playButtonGradientGlass}
+                  >
+                    <View style={styles.glassShine} />
+                    <Text style={styles.playButtonTextGlass}>🎪 ÇILGIN SIRALAMA</Text>
                   </ExpoLinearGradient>
                 </BlurView>
               </TouchableOpacity>
@@ -1474,7 +1912,7 @@ const MainMenu = ({ onStartGame, onHowToPlay, onSettings, onStats, onLeaderboard
 };
 
 export default function GameScreen() {
-  const [currentScreen, setCurrentScreen] = useState('loading'); // 'loading', 'menu', 'game', 'howToPlay', 'settings', 'achievements'
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'loading', 'menu', 'game', 'bubbleSort', 'howToPlay', 'settings', 'achievements'
   const [numberList, setNumberList] = useState([]);
   const [numbersToPlace, setNumbersToPlace] = useState([]);
   const [currentNumber, setCurrentNumber] = useState(null);
@@ -1708,6 +2146,11 @@ export default function GameScreen() {
     initializeGame();
   };
 
+  const startBubbleSort = () => {
+    playSound('button');
+    setCurrentScreen('bubbleSort');
+  };
+
   const showHowToPlay = () => {
     setCurrentScreen('howToPlay');
   };
@@ -1926,6 +2369,17 @@ export default function GameScreen() {
     return <HowToPlayScreen onBack={backToMenu} />;
   }
 
+  if (currentScreen === 'bubbleSort') {
+    return (
+      <BubbleSortGame 
+        onBack={backToMenu}
+        buttonSound={buttonSound}
+        soundEnabled={soundEnabled}
+        hapticEnabled={hapticEnabled}
+      />
+    );
+  }
+
   if (currentScreen === 'achievements') {
     return <AchievementsScreen onClose={backToMenu} />;
   }
@@ -1937,6 +2391,7 @@ export default function GameScreen() {
       <>
         <MainMenu 
           onStartGame={startGame} 
+          onStartBubbleSort={startBubbleSort}
           onHowToPlay={showHowToPlay}
           onSettings={showSettings}
           onStats={showStats}
@@ -3706,6 +4161,224 @@ const styles = StyleSheet.create({
   
   buttonSpacer: {
     height: 20,
+  },
+
+  // Baloncuk Sıralama Oyunu Stilleri
+  bubbleSortContainer: {
+    flex: 1,
+  },
+  bubbleHeader: {
+    paddingTop: responsiveSize.containerPadding + 35,
+    paddingHorizontal: responsiveSize.containerPadding,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 10,
+  },
+  bubbleBackButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...shadow.glass,
+  },
+  bubbleBackButtonGradient: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  bubbleBackText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  bubbleGameInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  bubbleScore: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleTimer: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleLevel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#87CEEB',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleGameArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  bubbleStartScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  bubbleTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 20,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  bubbleInstructions: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 24,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleStartButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    ...shadow.glass,
+  },
+  bubbleStartButtonGradient: {
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  bubbleStartButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  nextNumberIndicator: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  nextNumberText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    textAlign: 'center',
+    overflow: 'hidden',
+  },
+  bubbleItem: {
+    position: 'absolute',
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+  bubbleGradient: {
+    width: bubble.size.medium,
+    height: bubble.size.medium,
+    borderRadius: bubble.size.medium / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...bubble.shadow,
+  },
+  bubbleNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleGameOverScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  bubbleGameOverTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 20,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  bubbleGameOverScore: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textAlign: 'center',
+    marginBottom: 10,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleGameOverLevel: {
+    fontSize: 18,
+    color: '#87CEEB',
+    textAlign: 'center',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleGameOverButtons: {
+    gap: 12,
+  },
+  bubbleRestartButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    ...shadow.glass,
+  },
+  bubbleRestartButtonGradient: {
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  bubbleRestartButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  bubbleMenuButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    ...shadow.glass,
+  },
+  bubbleMenuButtonGradient: {
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  bubbleMenuButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
 

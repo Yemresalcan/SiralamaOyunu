@@ -81,4 +81,27 @@ export const glassmorphism = {
   },
 };
 
+export const bubble = {
+  size: {
+    small: 60,
+    medium: 80,
+    large: 100,
+  },
+  colors: {
+    blue: ['#3498DB', '#2980B9'],
+    green: ['#2ECC71', '#27AE60'],
+    red: ['#E74C3C', '#C0392B'],
+    yellow: ['#F1C40F', '#F39C12'],
+    purple: ['#9B59B6', '#8E44AD'],
+    orange: ['#E67E22', '#D35400'],
+  },
+  shadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  }
+};
+
 
