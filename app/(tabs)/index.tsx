@@ -1069,6 +1069,7 @@ const BubbleSortGame = ({ onBack, buttonSound, soundEnabled, hapticEnabled }: Bu
   const [gameOver, setGameOver] = useState(false);
   const [nextNumber, setNextNumber] = useState(1);
   const [level, setLevel] = useState(1);
+  const [retryCount, setRetryCount] = useState(0);
   const [gameEndReason, setGameEndReason] = useState<'success' | 'timeout' | 'wrong'>('success');
   
   const animationValues = useRef<{[key: string]: Animated.Value}>({}).current;
@@ -1179,8 +1180,12 @@ const BubbleSortGame = ({ onBack, buttonSound, soundEnabled, hapticEnabled }: Bu
     setBubbles(generateBubbles(bubbleCount));
     setGameStarted(true);
     setGameOver(false);
-    setScore(0);
+    setScore(gameEndReason === 'success' ? score : 0); // Başarılıysa skoru koru, değilse sıfırla
     setNextNumber(1);
+    // Sadece yeni level başlarken retry count sıfırla
+    if (gameEndReason === 'success') {
+      setRetryCount(0);
+    }
     // Level arttıkça süre azalır: Level 1: 45sn, Level 2: 40sn, Level 3: 35sn...minimum 15sn
     setTimeLeft(Math.max(50 - (level * 5), 15)); 
   };
@@ -1337,8 +1342,8 @@ const BubbleSortGame = ({ onBack, buttonSound, soundEnabled, hapticEnabled }: Bu
                 {level === 1 
                   ? `${4 + level} sayıyı küçükten büyüğe sırayla patlatın!` 
                   : `Level ${level}: ${4 + level} sayıyı sırayla patlatın!`}
-                {'\n'}Süre: {Math.max(50 - (level * 5), 15)} saniye
-                {'\n'}Yanlış sırayla tıklarsanız oyun biter.
+                {'\n'}Süre: {Math.max(50 - (level * 5), 15)} saniye 
+                {'\n'}3 tekrar deneme hakkınız var!
               </Text>
               <TouchableOpacity style={styles.bubbleStartButton} onPress={startBubbleGame}>
                 <ExpoLinearGradient
@@ -1410,18 +1415,37 @@ const BubbleSortGame = ({ onBack, buttonSound, soundEnabled, hapticEnabled }: Bu
               <Text style={styles.bubbleGameOverScore}>Skorunuz: {score}</Text>
               <Text style={styles.bubbleGameOverLevel}>
                 {gameEndReason === 'success' ? `Level ${level} başarıyla tamamlandı!` : 
-                 gameEndReason === 'timeout' ? `Level ${level} başarısız - Süre doldu!` : 
-                 `Level ${level} başarısız - Yanlış sıralama!`}
+                 gameEndReason === 'timeout' ? `Level ${level} başarısız - Süre doldu! (${3 - retryCount}/3 hak kaldı)` : 
+                 retryCount < 3 ? `Level ${level} başarısız - Yanlış sıralama! (${3 - retryCount}/3 hak kaldı)` : 
+                 `Level ${level} başarısız - Tekrar deneme hakları bitti!`}
               </Text>
               
               <View style={styles.bubbleGameOverButtons}>
-                <TouchableOpacity style={styles.bubbleRestartButton} onPress={startBubbleGame}>
+                <TouchableOpacity 
+                  style={styles.bubbleRestartButton} 
+                  onPress={() => {
+                    if (gameEndReason === 'success') {
+                      // Sonraki level
+                      startBubbleGame();
+                    } else if (retryCount < 3) {
+                      // Tekrar dene hakkı var
+                      setRetryCount(prev => prev + 1);
+                      startBubbleGame();
+                    } else {
+                      // Haklar bitti - ana menüye dön
+                      setLevel(1);
+                      setRetryCount(0);
+                      onBack();
+                    }
+                  }}
+                >
                   <ExpoLinearGradient
                     colors={gradients.glassGreen}
                     style={styles.bubbleRestartButtonGradient}
                   >
                     <Text style={styles.bubbleRestartButtonText}>
-                      {gameEndReason === 'success' ? 'SONRAKİ LEVEL' : 'TEKRAR DENE'}
+                      {gameEndReason === 'success' ? 'SONRAKİ LEVEL' : 
+                       retryCount < 3 ? `TEKRAR DENE (${3 - retryCount}/3)` : 'ANA MENÜ'}
                     </Text>
                   </ExpoLinearGradient>
                 </TouchableOpacity>
@@ -1806,27 +1830,7 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
                 </BlurView>
               </TouchableOpacity>
 
-              {/* Boşluk */}
-              <View style={styles.buttonSpacer} />
 
-              {/* AYARLAR Butonu - Glassmorphism */}
-              <TouchableOpacity 
-                style={styles.settingsButtonGlass}
-                onPress={() => {
-                  playSound('button');
-                  onSettings();
-                }}
-              >
-                <BlurView intensity={30} style={styles.settingsButtonBlur}>
-                  <ExpoLinearGradient
-                    colors={gradients.glassGreen}
-                    style={styles.settingsGradientGlass}
-                  >
-                    <View style={styles.glassShine} />
-                    <Text style={styles.settingsButtonTextGlass}>⚙️ AYARLAR</Text>
-                  </ExpoLinearGradient>
-                </BlurView>
-              </TouchableOpacity>
            </Animated.View>
 
            {/* Alt İkonlar */}
@@ -4115,39 +4119,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
 
-  settingsButtonGlass: {
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    width: '75%',
-    ...shadow.glass,
-    shadowColor: '#27AE60',
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-  },
-  settingsButtonBlur: {
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...glassmorphism.button,
-    borderColor: 'rgba(88,214,141,0.6)',
-    borderWidth: 2,
-  },
-  settingsGradientGlass: {
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    position: 'relative',
-  },
-  settingsButtonTextGlass: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
+
 
   glassShine: {
     position: 'absolute',
@@ -4216,6 +4188,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#87CEEB',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  bubbleLives: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF6B89',
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
@@ -4365,18 +4345,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   bubbleMenuButton: {
-    borderRadius: 25,
+    borderRadius: 20,
     overflow: 'hidden',
     ...shadow.glass,
   },
   bubbleMenuButtonGradient: {
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 20,
     alignItems: 'center',
   },
   bubbleMenuButtonText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
