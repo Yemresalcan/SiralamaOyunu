@@ -1752,33 +1752,19 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
          </TouchableOpacity>
 
          <View style={styles.menuContent}>
-            {/* Oyun Başlığı ve Versiyon Rozeti */}
+            {/* Oyun Logosu */}
            <Animated.View style={[
              styles.titleContainer,
              { transform: [{ scale: titleBounce }] }
            ]}>
-             <ExpoLinearGradient
-               colors={['#FF6B35', '#F7931E', '#FFD700']}
-               style={styles.titleBackground}
-             >
-                <Text style={styles.gameTitle}>ORDIX</Text>
-               
-             </ExpoLinearGradient>
+             <Image
+               source={require('../../assets/images/icon.png')}
+               style={styles.gameLogo}
+               contentFit="contain"
+             />
            </Animated.View>
 
-           {/* Karakter Bölümü */}
-           <Animated.View style={[
-             styles.characterContainer,
-             { transform: [{ scale: characterBounce }] }
-           ]}>
-             <View style={styles.numbersRow}>
-               <Text style={styles.numberCharacter}>1️⃣</Text>
-               <Text style={styles.numberCharacter}>2️⃣</Text>
-               <Text style={styles.numberCharacter}>3️⃣</Text>
-               <Text style={styles.numberCharacter}>4️⃣</Text>
-               <Text style={styles.numberCharacter}>5️⃣</Text>
-             </View>
-           </Animated.View>
+
 
            {/* Ana Butonlar */}
            <Animated.View style={[
@@ -1787,7 +1773,7 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
            ]}>
                            {/* OYNA Butonu - Glassmorphism */}
                          <TouchableOpacity 
-             style={styles.playButtonGlass} 
+             style={styles.playButtonGlassPink} 
              onPress={() => {
                playSound('button');
                onStartGame();
@@ -1795,13 +1781,13 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
              activeOpacity={0.8}
              hitSlop={isAndroid ? { top: 10, bottom: 10, left: 10, right: 10 } : undefined}
            >
-                <BlurView intensity={30} style={styles.playButtonBlur}>
+                <BlurView intensity={30} style={styles.playButtonBlurPink}>
                   <ExpoLinearGradient
-                    colors={gradients.glassRed}
+                    colors={gradients.vibrantOrange}
                     style={styles.playButtonGradientGlass}
                   >
                     <View style={styles.glassShine} />
-                    <Text style={styles.playButtonTextGlass}>🎮 SIRAYLA</Text>
+                    <Text style={styles.playButtonTextGlass}>🎮 KÖR SIRALAMA</Text>
                   </ExpoLinearGradient>
                 </BlurView>
               </TouchableOpacity>
@@ -1811,7 +1797,7 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
 
               {/* HIZ SIRALA Butonu - Glassmorphism */}
               <TouchableOpacity 
-                style={styles.playButtonGlass}
+                style={styles.playButtonGlassPurple}
                 onPress={() => {
                   playSound('button');
                   onStartBubbleSort();
@@ -1819,9 +1805,9 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
                 activeOpacity={0.8}
                 hitSlop={isAndroid ? { top: 10, bottom: 10, left: 10, right: 10 } : undefined}
               >
-                <BlurView intensity={30} style={styles.playButtonBlur}>
+                <BlurView intensity={30} style={styles.playButtonBlurPurple}>
                   <ExpoLinearGradient
-                    colors={gradients.glassBlue}
+                    colors={gradients.vibrantGreen}
                     style={styles.playButtonGradientGlass}
                   >
                     <View style={styles.glassShine} />
@@ -2732,6 +2718,11 @@ const styles = StyleSheet.create({
     elevation: 15,
     borderWidth: 4,
     borderColor: '#FFF',
+  },
+  gameLogo: {
+    width: isSmallScreen ? 250 : isMediumScreen ? 150 :   200,
+    height: isSmallScreen ? 250 : isMediumScreen ? 150 : 110,
+    alignSelf: 'center',
   },
   gameTitle: {
     fontSize: responsiveSize.titleFont,
@@ -4093,12 +4084,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
   },
+  playButtonGlassPink: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    width: '85%',
+    ...shadow.glow,
+    shadowColor: '#FFE100',
+    shadowOpacity: 0.6,
+    shadowRadius: 18,
+  },
+  playButtonGlassPurple: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    width: '85%',
+    ...shadow.glow,
+    shadowColor: '#FB4141',
+    shadowOpacity: 0.6,
+    shadowRadius: 18,
+  },
   playButtonBlur: {
     borderRadius: radius.xl,
     overflow: 'hidden',
     ...glassmorphism.button,
-    borderColor: 'rgba(255,71,87,0.6)',
+    borderColor: 'rgb(225, 255,0)',
     borderWidth: 2,
+  },
+  playButtonBlurPink: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...glassmorphism.button,
+  },
+  playButtonBlurPurple: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...glassmorphism.button,
   },
   playButtonGradientGlass: {
     paddingVertical: 18,

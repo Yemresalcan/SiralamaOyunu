@@ -20,6 +20,16 @@ export const gradients = {
   glassBlue: ['rgba(74,144,226,0.8)', 'rgba(30,144,255,0.4)'] as const,
   glassGreen: ['rgba(88,214,141,0.8)', 'rgba(39,174,96,0.4)'] as const,
   glassRed: ['rgba(255,71,87,0.9)', 'rgba(255,55,71,0.5)'] as const,
+  // Yeni canlı buton gradyentleri
+  vibrantBlue: ['rgba(30,144,255,0.95)', 'rgba(0,123,255,0.7)'] as const,
+  vibrantPurple: ['rgba(138,43,226,0.95)', 'rgba(123,31,162,0.7)'] as const,
+  vibrantOrange: ['rgba(255,140,0,0.95)', 'rgba(250, 246, 5, 0.7)'] as const,
+  vibrantPink: ['rgba(255,20,147,0.95)', 'rgba(219,112,147,0.7)'] as const,
+  vibrantTeal: ['rgba(0,206,209,0.95)', 'rgba(72,209,204,0.7)'] as const,
+  vibrantYellow: ['rgba(255,225,0,0.95)', 'rgba(180,229,13,0.7)'] as const,
+  vibrantLime: ['rgba(180,229,13,0.95)', 'rgba(255,225,0,0.7)'] as const,
+  vibrantRed: ['rgba(251,65,65,0.95)', 'rgba(220,38,38,0.7)'] as const,
+  vibrantGreen: ['rgba(34,197,94,0.95)', 'rgba(22,163,74,0.7)'] as const,
 };
 
 export const radius = {

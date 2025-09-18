@@ -33,6 +33,7 @@ const app = initializeApp(firebaseConfig);
 // React Native/Expo ortamlarında WebChannel sorunlarını önlemek için uzun anketlemeyi zorla
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
+  ignoreUndefinedProperties: true,
 });
 
 // Dev'de detaylı log ve ağın açık olduğundan emin ol
@@ -41,9 +42,11 @@ if (typeof __DEV__ !== 'undefined' && __DEV__) {
     setLogLevel('debug');
     // Not: Promise beklenmeden çağrılır; hata olursa consola yazılır
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    enableNetwork(db);
+    enableNetwork(db).catch((error) => {
+      console.warn('Firebase network enable failed:', error);
+    });
   } catch (e) {
-    // noop
+    console.warn('Firebase setup warning:', e);
   }
 }
 
