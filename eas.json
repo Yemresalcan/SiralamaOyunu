@@ -16,10 +16,15 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       },
       "ios": {
         "autoIncrement": true
+      }
+    },
+    "production-aab": {
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   },
