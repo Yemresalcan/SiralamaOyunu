@@ -1884,7 +1884,7 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
 
           {/* Versiyon Bilgisi */}
           <View style={styles.versionContainer}>
-            <Text style={styles.versionText}>Sürüm 1.1</Text>
+            <Text style={styles.versionText}>Sürüm 2</Text>
             <TouchableOpacity 
               style={styles.privacyButton}
               onPress={() => {
