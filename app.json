@@ -7,25 +7,14 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ordix",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "description": "Eğlenceli sayı sıralama oyunu! Sayıları küçükten büyüğe doğru sırala ve en yüksek skoru elde et. Zihin egzersizi için mükemmel!",
     "primaryColor": "#87CEEB",
-    "privacy": "public",
     "platforms": [
       "ios",
       "android",
       "web"
     ],
-    "keywords": [
-      "oyun",
-      "sayı",
-      "sıralama",
-      "matematik",
-      "eğitim",
-      "zeka",
-      "puzzle"
-    ],
-    "category": "games",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ordix.sayisiralama",
@@ -45,7 +34,6 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.ordix.sayisiralama",
-      "versionCode": 2,
       "permissions": [
         "VIBRATE"
       ],
@@ -75,7 +63,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#87CEEB"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
