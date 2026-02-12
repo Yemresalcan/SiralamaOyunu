@@ -45,6 +45,9 @@ class LeaderboardService {
       };
       await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
 
+      // Firebase hazır değilse local kayıtla devam et; uygulama açılışını bozma.
+      if (!db) return;
+
       // Firestore'da kullanıcı dokümanını oluştur/merge et
       const userDocRef = doc(db, COLLECTION_NAME, username);
       const existing = await getDoc(userDocRef);
@@ -100,23 +103,25 @@ class LeaderboardService {
         return false;
       }
 
-      // Firestore'da kullanıcıya özel dokümanı upsert et ve en iyi skoru yaz
-      const userDocRef = doc(db, COLLECTION_NAME, userData.username);
-      const existing = await getDoc(userDocRef);
-      const previousScore = existing.exists() ? (existing.data()?.score ?? 0) : 0;
-      const bestScore = Math.max(previousScore, score);
+      if (db) {
+        // Firestore'da kullanıcıya özel dokümanı upsert et ve en iyi skoru yaz
+        const userDocRef = doc(db, COLLECTION_NAME, userData.username);
+        const existing = await getDoc(userDocRef);
+        const previousScore = existing.exists() ? (existing.data()?.score ?? 0) : 0;
+        const bestScore = Math.max(previousScore, score);
 
-      await setDoc(
-        userDocRef,
-        {
-          username: userData.username,
-          deviceId: userData.deviceId,
-          score: bestScore,
-          createdAt: existing.exists() ? existing.data()?.createdAt ?? serverTimestamp() : serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+        await setDoc(
+          userDocRef,
+          {
+            username: userData.username,
+            deviceId: userData.deviceId,
+            score: bestScore,
+            createdAt: existing.exists() ? existing.data()?.createdAt ?? serverTimestamp() : serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
 
       // Local high score'u güncelle
       if (score > userData.highScore) {
@@ -135,6 +140,7 @@ class LeaderboardService {
   // Top skorları getir
   async getTopScores(limitCount: number = 100): Promise<LeaderboardEntry[]> {
     try {
+      if (!db) return [];
       const qRef = query(
         collection(db, COLLECTION_NAME),
         orderBy('score', 'desc'),
@@ -152,6 +158,7 @@ class LeaderboardService {
   // Kullanıcının en yüksek skorunu getir
   async getUserHighScore(username: string): Promise<number> {
     try {
+      if (!db) return 0;
       const userDocRef = doc(db, COLLECTION_NAME, username);
       const snap = await getDoc(userDocRef);
       if (snap.exists()) return snap.data().score ?? 0;
@@ -165,6 +172,7 @@ class LeaderboardService {
   // Kullanıcının sıralamasını getir
   async getUserRank(username: string, score: number): Promise<number> {
     try {
+      if (!db) return 0;
       const q = query(
         collection(db, COLLECTION_NAME),
         where('score', '>', score)
@@ -181,6 +189,7 @@ class LeaderboardService {
   // Kullanıcı adı kontrolü (benzersizlik için)
   async isUsernameAvailable(username: string): Promise<boolean> {
     try {
+      if (!db) return true;
       const userDocRef = doc(db, COLLECTION_NAME, username);
       const snap = await getDoc(userDocRef);
       return !snap.exists();

@@ -2,7 +2,7 @@
   "expo": {
     "name": "ORDIX - Sayı Sıralama Oyunu",
     "slug": "ordix",
-    "version": "3.0.0",
+    "version": "3.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ordix",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ordix.sayisiralama",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "Bu uygulama kamera kullanmaz",
         "NSMicrophoneUsageDescription": "Bu uygulama mikrofon kullanmaz"
@@ -34,12 +34,10 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.ordix.sayisiralama",
-      
-      "versionCode": 200,
-
-
+      "versionCode": 202,
       "permissions": [
-        "VIBRATE"
+        "VIBRATE",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "blockedPermissions": [
         "RECORD_AUDIO"
@@ -74,6 +72,7 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
         "projectId": "d3d3d717-b2a1-41b5-8b05-3fdd11c4383c"
       }

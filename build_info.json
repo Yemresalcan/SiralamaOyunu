@@ -1,0 +1,51 @@
+{
+  "id": "8e16f98a-4473-4478-9712-99f9e8ac1629",
+  "status": "ERRORED",
+  "platform": "ANDROID",
+  "error": {
+    "errorCode": "EAS_BUILD_UNKNOWN_GRADLE_ERROR",
+    "message": "Gradle build failed with unknown error. See logs for the \"Run gradlew\" phase for more information."
+  },
+  "artifacts": {},
+  "fingerprint": {
+    "id": "019c4ef1-dcde-7ece-90b0-3e5e86efa765",
+    "hash": "ee904e8fc2b54d1761a8e9e459f81c375b8a9f0a"
+  },
+  "initiatingActor": {
+    "id": "14c89f36-2ea4-4055-9d37-de4be7ce5760",
+    "displayName": "sundevflower"
+  },
+  "logFiles": [
+    "https://job-logs.eascdn.net/production/8e16f98a-4473-4478-9712-99f9e8ac1629/1770850999707-b5fc9b48-faa5-4cf3-865f-2689d77df3c5.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260211%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260211T231417Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=4f2d016da5c8c3c1d66eb36684101f9973940ff7f3c52fbbe1a00568dd6fc42efe864d266a4f38a6865bded836ee5ebfebcf6442f80120911b798dd2a0d052cfec9cba0806f518bf01532941917bd698e3a541ab8ecc3781ccefa0e7ed1ebb67c1ba354d6340748e2103a7ac054d6ef48457c42865da38fd12abf0c14d184bda36597b306802ed070ad18c776165e7ac2c2da35591c5b77ae87675ffebee0339b3a0c58a254eb4c4ab51c3dfaf2912d8003587fd75a4f7dcd024d9de80131e3b04545096c74d638e7255ef56022f4b360eb193e071da598f0cfb6497a560548a614a20e2ebe6362a90d64f11f4dc09df0c262cba6c99b2147b39f172ac6ad47d",
+    "https://job-logs.eascdn.net/production/8e16f98a-4473-4478-9712-99f9e8ac1629/1770851002579-febbde41-2892-4c0a-850e-b935eb2bc89b.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260211%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260211T231417Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=152f366109a0fb303701b0afaf0e84218b2963a371c1245fbe70042820bdec85bd259971884a462593ea39ea0df41426b050a5dcfd962bf4d8b9332b150669de30ca7fa1f4342dc8869441031c8d20e0b43d7cd1467cbe46f42a8a46773f894851ee7db9bff257f6ebd00adb1cb23360353b601c9acc4ab1ebdaf685c53a343926e9cd2f714881c76936afc88ff0982b77df81a1b623894e818e7e8954c2f69b03d55d1800c229090066e0299ecd09f16725467d9af3ebf7795006561c5f14ea2c8ba8a4559e00255d6d66240e27794e74cb3aab98186f780399342d912feb3f2d08c19981c7062cd45d810b89cd4f130d4e2894f7945f75fc35a19c909b1c8e",
+    "https://job-logs.eascdn.net/production/8e16f98a-4473-4478-9712-99f9e8ac1629/1770851002845-3786b154-9644-40e4-b646-19d9670f2a5b.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260211%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260211T231417Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=4d8a73f275025f31cb3d675439fd4b7c4d9083baa52f90f3a63d0744f36d1d945a7abb8b0b8e1468793b44fc4756cea2cd2760c59357f512fdd38c13c82104fef1bf26b0b5de9a0e4e32d11aa0699a2f060b217605cfbca90922a49bffe8bf1a1e50f672affe171b38993017221f37ac1cf634769b422992ff437148ca318018b7c36d8ae07f85a48b22d5a0c40684d19ec608cb881d7b274d206c4252211c33893e31bd55fea6c07c2c3a86fc16cc4fb24217db0807a126e8b7002ccd5c09f9a60127443ecb0e4af4fe94597d74fed0a1c7fbdbe0c85178a5aea21ab8e4e6a59ba220c4d5064968428efec565ee23af58b3bfc9233d5ef0d81348c89f40d12d",
+    "https://job-logs.eascdn.net/production/8e16f98a-4473-4478-9712-99f9e8ac1629/1770851003054-145d7ea7-d56a-465e-ba59-210ccf3a8baa.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260211%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260211T231417Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=99054f2b34afcfc74fe3af3e332ff9e4a86aba39a720d7634905bd504ba001056eca90c04fbf8f969e06bce83cd0b71a73a77bb5259ec995164d55322cf1ac227f4ed86e80ada6b992093d78c6bfd7d0665e8abef139a96044e85f6c43c4c2a2d10d68c3e14fdb5c46d487e81aad67212a7e3768c17f0ef5b5bc7f7a02c99016fa39914e84204cdde72bfb5a9cb2e542d52a6194f397c89af8a6cbb4fcff394864629156f2bd0c24ee1ec36541ae6f07285973faae3ba877e99d67bcae1a62dc1123d6c41824064ea81da203b4497c5d571d4e8cd4885a2be28841a12f8199cf0fe9d7b930c88328cff6bbf946d1402b2d4e928e17c504d35d9c4236f0501228"
+  ],
+  "project": {
+    "id": "d3d3d717-b2a1-41b5-8b05-3fdd11c4383c",
+    "name": "Ordix",
+    "slug": "ordix",
+    "ownerAccount": {
+      "id": "82211386-eae0-4d28-b2ac-833c15503ba8",
+      "name": "sundevflower"
+    }
+  },
+  "distribution": "INTERNAL",
+  "buildProfile": "preview-apk",
+  "sdkVersion": "54.0.0",
+  "appVersion": "3.0.1",
+  "appBuildVersion": "201",
+  "gitCommitHash": "d56367240e2838da88500dcc1cd4c980d36eb5c1",
+  "gitCommitMessage": "fix: change appVersionSource from remote to local in eas.json",
+  "priority": "NORMAL_PLUS",
+  "createdAt": "2026-02-11T23:03:19.485Z",
+  "updatedAt": "2026-02-11T23:06:48.773Z",
+  "completedAt": "2026-02-11T23:06:35.305Z",
+  "expirationDate": "2026-02-25T23:03:19.510Z",
+  "isForIosSimulator": false,
+  "metrics": {
+    "buildWaitTime": 112,
+    "buildQueueTime": 41103,
+    "buildDuration": 154151
+  }
+}

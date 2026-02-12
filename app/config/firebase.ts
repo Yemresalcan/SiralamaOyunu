@@ -12,11 +12,8 @@ const requiredKeys = [
   'EXPO_PUBLIC_FIREBASE_APP_ID',
 ] as const;
 
-for (const key of requiredKeys) {
-  if (!process.env[key]) {
-    throw new Error(`Missing required env: ${key}. Did you create .env and restart Expo (expo start -c)?`);
-  }
-}
+const missingKeys = requiredKeys.filter((key) => !process.env[key]);
+export const isFirebaseConfigured = missingKeys.length === 0;
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY as string,
@@ -28,29 +25,41 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID as string | undefined,
 };
 
-const app = initializeApp(firebaseConfig);
+let app: ReturnType<typeof initializeApp> | null = null;
+export let db: ReturnType<typeof initializeFirestore> | null = null;
 
-// React Native/Expo ortamlarında WebChannel sorunlarını önlemek için uzun anketlemeyi zorla
-export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true,
-  ignoreUndefinedProperties: true,
-});
+if (isFirebaseConfigured) {
+  app = initializeApp(firebaseConfig);
+  // React Native/Expo ortamlarında WebChannel sorunlarını önlemek için uzun anketlemeyi zorla
+  db = initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+    ignoreUndefinedProperties: true,
+  });
+} else {
+  console.warn(
+    `[Firebase] Missing EXPO_PUBLIC_* keys: ${missingKeys.join(
+      ', '
+    )}. Running in local-only mode to prevent startup crash.`
+  );
+}
 
 // Dev'de detaylı log ve ağın açık olduğundan emin ol
 if (typeof __DEV__ !== 'undefined' && __DEV__) {
   try {
-    setLogLevel('debug');
-    // Not: Promise beklenmeden çağrılır; hata olursa consola yazılır
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    enableNetwork(db).catch((error) => {
-      console.warn('Firebase network enable failed:', error);
-    });
+    if (db) {
+      setLogLevel('debug');
+      // Not: Promise beklenmeden çağrılır; hata olursa consola yazılır
+      enableNetwork(db).catch((error) => {
+        console.warn('Firebase network enable failed:', error);
+      });
+    }
   } catch (e) {
     console.warn('Firebase setup warning:', e);
   }
 }
 
 export const initAnalytics = async () => {
+  if (!app) return null;
   const supported = await isSupported();
   if (supported) return getAnalytics(app);
   return null;
