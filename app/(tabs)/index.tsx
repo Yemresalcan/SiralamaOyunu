@@ -1902,6 +1902,7 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
 };
 
 export default function GameScreen() {
+  const router = useRouter();
   const [currentScreen, setCurrentScreen] = useState('loading'); // 'loading', 'menu', 'game', 'bubbleSort', 'howToPlay', 'settings', 'achievements'
   const [numberList, setNumberList] = useState([]);
   const [numbersToPlace, setNumbersToPlace] = useState([]);
@@ -2374,7 +2375,7 @@ export default function GameScreen() {
     return <AchievementsScreen onClose={backToMenu} />;
   }
 
-  const router = useRouter();
+
 
   if (currentScreen === 'menu') {
     return (

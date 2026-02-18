@@ -2,12 +2,12 @@
   "expo": {
     "name": "ORDIX - Sayı Sıralama Oyunu",
     "slug": "ordix",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ordix",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "description": "Eğlenceli sayı sıralama oyunu! Sayıları küçükten büyüğe doğru sırala ve en yüksek skoru elde et. Zihin egzersizi için mükemmel!",
     "primaryColor": "#87CEEB",
     "platforms": [
@@ -32,9 +32,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#87CEEB"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.ordix.sayisiralama",
-      "versionCode": 202,
+      "versionCode": 203,
       "permissions": [
         "VIBRATE",
         "android.permission.MODIFY_AUDIO_SETTINGS"
