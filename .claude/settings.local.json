@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:syedali.dev)",
+      "WebFetch(domain:docs.codemagic.io)",
+      "Bash(npm install:*)",
+      "Bash(eas build:*)",
+      "WebFetch(domain:expo.dev)",
+      "Bash(eas build:view:*)",
+      "Bash(eas build:logs:*)",
+      "Bash(eas --help:*)",
+      "Bash(npx expo export:*)"
+    ]
+  }
+}

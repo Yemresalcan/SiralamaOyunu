@@ -2,7 +2,7 @@
   "expo": {
     "name": "ORDIX - Sayı Sıralama Oyunu",
     "slug": "ordix",
-    "version": "3.0.3",
+    "version": "3.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ordix",
@@ -33,7 +33,7 @@
         "backgroundColor": "#87CEEB"
       },
       "package": "com.ordix.sayisiralama",
-      "versionCode": 203,
+      "versionCode": 204,
       "permissions": [
         "VIBRATE",
         "android.permission.MODIFY_AUDIO_SETTINGS"
