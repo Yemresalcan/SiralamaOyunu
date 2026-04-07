@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "ORDIX - Sayı Sıralama Oyunu",
+    "name": "YUXA Sayi Siralama",
     "slug": "ordix",
-    "version": "3.0.4",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "ordix",
+    "icon": "./assets/images/logo-yuxa.png",
+    "scheme": "yuxa",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "description": "Eğlenceli sayı sıralama oyunu! Sayıları küçükten büyüğe doğru sırala ve en yüksek skoru elde et. Zihin egzersizi için mükemmel!",
-    "primaryColor": "#87CEEB",
+    "primaryColor": "#FF7A33",
     "platforms": [
       "ios",
       "android",
@@ -17,8 +17,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ordix.sayisiralama",
-      "buildNumber": "2",
+      "bundleIdentifier": "com.yuxa.sayisiralama",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Bu uygulama kamera kullanmaz",
         "NSMicrophoneUsageDescription": "Bu uygulama mikrofon kullanmaz"
@@ -29,11 +29,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#87CEEB"
+        "foregroundImage": "./assets/images/logo-yuxa.png",
+        "backgroundColor": "#FF7A33"
       },
-      "package": "com.ordix.sayisiralama",
-      "versionCode": 204,
+      "package": "com.yuxa.sayisiralama",
+      "versionCode": 1,
       "permissions": [
         "VIBRATE",
         "android.permission.MODIFY_AUDIO_SETTINGS"
@@ -41,12 +41,12 @@
       "blockedPermissions": [
         "RECORD_AUDIO"
       ],
-      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.ordix.sayisiralama"
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.yuxa.sayisiralama"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/logo-yuxa.png"
     },
     "plugins": [
       "expo-router",
@@ -59,13 +59,14 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/logo-yuxa.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#87CEEB"
+          "backgroundColor": "#FF7A33"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

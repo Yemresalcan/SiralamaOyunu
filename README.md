@@ -1,68 +1,245 @@
-# Welcome to your Expo app 👋
+# YUXA — Number Ordering Game / Sayı Sıralama Oyunu
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<div align="center">
 
-## Get started
+**EN:** A fast, polished mobile puzzle: sort numbers from smallest to largest, chase high scores, unlock achievements, and compete on the global leaderboard.
 
-1. Install dependencies
+**TR:** Sayıları küçükten büyüğe sıraladığınız hızlı ve akıcı bir mobil bulmaca: yüksek skor, başarımlar ve küresel skor tablosu.
+
+[![Expo](https://img.shields.io/badge/Expo-54-000020?style=flat&logo=expo)](https://expo.dev)
+[![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=flat&logo=react)](https://reactnative.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+
+</div>
+
+---
+
+## English
+
+### Overview
+
+**YUXA** is a number-sorting brain game built with [Expo](https://expo.dev) and [React Native](https://reactnative.dev). It targets **iOS**, **Android**, and **web**, with Firebase used for leaderboard and related backend configuration.
+
+This repo is set up for a **fresh install** and a **first store listing** under Android package `com.yuxa.sayisiralama` (version **1.0.0**, Android `versionCode` **1**). See `STORE_RELEASE_CHECKLIST.md` for a concise publish checklist.
+
+### Features
+
+- **Core gameplay** — Tap numbers in ascending order under time pressure; responsive layout tuned for many screen sizes.
+- **Leaderboard** — Cloud-backed rankings via Firebase.
+- **Achievements** — Progress and unlock flow with dedicated UI.
+- **Polish** — Haptic feedback, sound (`expo-av`), animated background, glass-style UI, and safe-area aware layouts.
+- **Routing** — [Expo Router](https://docs.expo.dev/router/introduction/) with typed routes.
+
+### Tech stack
+
+| Area | Stack |
+|------|--------|
+| Framework | Expo 54, React 19, React Native 0.81 |
+| Navigation | Expo Router 6 |
+| Backend (client) | Firebase JS SDK 11 |
+| Storage (local) | Async Storage |
+| UI / motion | Reanimated, Gesture Handler, Linear Gradient, Blur, Expo Image |
+
+### Requirements
+
+- **Node.js** (LTS recommended)
+- **npm** (or compatible package manager)
+- For native builds: **Android Studio** / **Xcode** per [Expo docs](https://docs.expo.dev/)
+
+### Getting started
+
+1. **Clone** the repository and open the project root.
+
+2. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. **Environment variables**
+
+   Create a `.env` file in the project root. Expo only exposes variables that start with `EXPO_PUBLIC_` to the client bundle:
 
    ```bash
+   EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+   EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   EXPO_PUBLIC_PRIVACY_POLICY_URL=https://your-deployment.vercel.app
+   ```
+
+   **`EXPO_PUBLIC_PRIVACY_POLICY_URL`:** Public HTTPS URL of your privacy policy (see `privacy-policy/` and `npm run deploy:privacy`). Required for store listings and the in-app “Gizlilik Politikası” link.
+
+   **Security:** Do not commit real `.env` values to git. Rotate keys if they were ever exposed.
+
+4. **Run the app**
+
+   ```bash
+   npm start
+   # or
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   Then open in **Expo Go**, an **emulator/simulator**, or a **development build**.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+5. **Native run (optional)**
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   ```bash
+   npm run android
+   npm run ios
+   ```
 
-## Environment variables (Expo)
+6. **Lint**
 
-Create a `.env` file in the project root and define the following variables (Expo public env vars must start with `EXPO_PUBLIC_`):
+   ```bash
+   npm run lint
+   ```
 
-```bash
-EXPO_PUBLIC_FIREBASE_API_KEY=...
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-EXPO_PUBLIC_FIREBASE_APP_ID=...
-EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=...
-```
+**First-time device install:** After `npm install`, a clean phone install only needs a new build (EAS or local) and the correct `.env`; no migration from a previous app ID is required.
 
-Notes:
-- Do not commit real secrets to VCS. These are runtime config keys used by Firebase Web SDK.
-- Expo automatically exposes `EXPO_PUBLIC_*` to the client bundle.
+### EAS Build
 
-## Get a fresh project
+This repo includes `eas.json` profiles (`development`, `preview`, `production`, etc.). Builds require the [EAS CLI](https://docs.expo.dev/build/introduction/) and an Expo account linked to the project.
 
-When you're ready, run:
+### Store & links
 
-```bash
-npm run reset-project
-```
+- **Android:** Create a **new** Play Console app with package `com.yuxa.sayisiralama`, then upload your AAB. After the listing is live: [Google Play — YUXA](https://play.google.com/store/apps/details?id=com.yuxa.sayisiralama).
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Project layout (high level)
 
-## Learn more
+- `app/` — Screens, tabs, components, Firebase config, services (leaderboard, achievements)
+- `assets/` — Images, fonts, app icon & splash (`images/logo-yuxa.png`)
+- `android/` — Native Android project (prebuild / local runs)
 
-To learn more about developing your project with Expo, look at the following resources:
+### Learn more
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- [Expo documentation](https://docs.expo.dev/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [Firebase for Web / JS](https://firebase.google.com/docs/web/setup)
 
-## Join the community
+### Expo template script (avoid here)
 
-Join our community of developers creating universal apps.
+`npm run reset-project` is the default Expo starter reset: it **moves** your `app` folder to `app-example` and creates an empty `app`. **Do not run it** on this game project unless you intend to wipe the codebase.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## Türkçe
+
+### Genel bakış
+
+**YUXA**, [Expo](https://expo.dev) ve [React Native](https://reactnative.dev) ile geliştirilmiş bir sayı sıralama oyunudur. **iOS**, **Android** ve **web** platformlarını hedefler; skor tablosu ve ilgili yapılandırma için **Firebase** kullanılır.
+
+Depo, **sıfırdan kurulum** ve **ilk mağaza yayını** için ayarlıdır: Android paket adı `com.yuxa.sayisiralama`, sürüm **1.0.0**, Android `versionCode` **1**. Kısa yayın listesi için `STORE_RELEASE_CHECKLIST.md` dosyasına bakın.
+
+### Özellikler
+
+- **Oynanış** — Süre baskısı altında sayıları küçükten büyüğe doğru seçme; farklı ekran boyutları için uyarlanmış arayüz.
+- **Skor tablosu** — Firebase ile bulut tabanlı sıralama.
+- **Başarımlar** — İlerleme ve kilidi açma akışı, ayrı başarım ekranı.
+- **Deneyim** — Titreşim geri bildirimi, ses (`expo-av`), animasyonlu arka plan, cam efektli arayüz ve güvenli alan düzeni.
+- **Yönlendirme** — Tür güvenli rotalar ile [Expo Router](https://docs.expo.dev/router/introduction/).
+
+### Teknoloji özeti
+
+| Alan | Teknoloji |
+|------|-----------|
+| Çatı | Expo 54, React 19, React Native 0.81 |
+| Navigasyon | Expo Router 6 |
+| Bulut (istemci) | Firebase JS SDK 11 |
+| Yerel depolama | Async Storage |
+| Arayüz / hareket | Reanimated, Gesture Handler, Linear Gradient, Blur, Expo Image |
+
+### Gereksinimler
+
+- **Node.js** (LTS önerilir)
+- **npm** (veya uyumlu paket yöneticisi)
+- Yerel derleme için: [Expo dokümantasyonuna](https://docs.expo.dev/) göre **Android Studio** / **Xcode**
+
+### Kurulum
+
+1. Depoyu **klonlayın** ve proje kök dizinine geçin.
+
+2. **Bağımlılıkları yükleyin**
+
+   ```bash
+   npm install
+   ```
+
+3. **Ortam değişkenleri**
+
+   Proje kökünde `.env` oluşturun. Expo, yalnızca `EXPO_PUBLIC_` ile başlayan değişkenleri istemci paketine dahil eder:
+
+   ```bash
+   EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+   EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   EXPO_PUBLIC_PRIVACY_POLICY_URL=https://your-deployment.vercel.app
+   ```
+
+   **`EXPO_PUBLIC_PRIVACY_POLICY_URL`:** Gizlilik politikasının herkese açık HTTPS adresi (`privacy-policy/` klasörü ve `npm run deploy:privacy`). Mağaza girişi ve uygulama içi “Gizlilik Politikası” bağlantısı için gereklidir.
+
+   **Güvenlik:** Gerçek `.env` değerlerini git’e eklemeyin. Anahtarlar sızdıysa Firebase konsolundan yenileyin.
+
+4. **Uygulamayı çalıştırın**
+
+   ```bash
+   npm start
+   # veya
+   npx expo start
+   ```
+
+   Ardından **Expo Go**, **emülatör/simülatör** veya **development build** ile açın.
+
+5. **Yerel native çalıştırma (isteğe bağlı)**
+
+   ```bash
+   npm run android
+   npm run ios
+   ```
+
+6. **Lint**
+
+   ```bash
+   npm run lint
+   ```
+
+**İlk telefon kurulumu:** `npm install` sonrası temiz cihaza yüklemek için yeni bir derleme (EAS veya yerel) ve doğru `.env` yeterli; eski uygulama paketinden veri taşıma gerekmez.
+
+### EAS derlemesi
+
+Projede `eas.json` profilleri bulunur (`development`, `preview`, `production` vb.). Derlemeler için [EAS CLI](https://docs.expo.dev/build/introduction/) ve projeye bağlı Expo hesabı gerekir.
+
+### Mağaza ve bağlantılar
+
+- **Android:** Play Console’da paket adı **`com.yuxa.sayisiralama`** ile **yeni uygulama** açıp AAB yükleyin. Liste yayına alındıktan sonra mağaza bağlantısı çalışır: `https://play.google.com/store/apps/details?id=com.yuxa.sayisiralama`
+
+### Klasör yapısı (özet)
+
+- `app/` — Ekranlar, sekmeler, bileşenler, Firebase yapılandırması, servisler (skor tablosu, başarımlar)
+- `assets/` — Görseller, fontlar, uygulama ikonu ve splash (`images/logo-yuxa.png`)
+- `android/` — Yerel Android projesi
+
+### Daha fazla bilgi
+
+- [Expo dokümantasyonu](https://docs.expo.dev/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [Firebase Web kurulumu](https://firebase.google.com/docs/web/setup)
+
+### Expo şablon script’i (burada kullanmayın)
+
+`npm run reset-project`, Expo’nun varsayılan sıfırlama komutudur: `app` klasörünü `app-example` altına **taşır** ve boş `app` oluşturur. Bu oyun projesinde **çalıştırmayın**; kod tabanını silersiniz.
+
+---
+
+## License / Lisans
+
+This project is **private** (`"private": true` in `package.json`). Redistribution or publication of source code is subject to the repository owner’s policy.
+
+Bu proje **özel**dir (`package.json` içinde `"private": true`). Kaynak kodun paylaşımı veya yayımı depo sahibinin politikasına tabidir.

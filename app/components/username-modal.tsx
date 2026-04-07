@@ -106,7 +106,7 @@ export function UsernameModal({ visible, onComplete }: UsernameModalProps) {
           <View style={styles.modalContent}>
             <View style={styles.header}>
               <Text style={styles.welcomeEmoji}>🎮</Text>
-              <Text style={styles.title}>ORDIX'e Hoş Geldin!</Text>
+              <Text style={styles.title}>{"YUXA'ya Hoş Geldin!"}</Text>
               <Text style={styles.subtitle}>
                 Lider tablosunda görünecek kullanıcı adını seç
               </Text>

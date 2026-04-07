@@ -30,7 +30,7 @@ export interface UserData {
 }
 
 const COLLECTION_NAME = 'leaderboard';
-const USER_DATA_KEY = '@ordix_user_data';
+const USER_DATA_KEY = '@yuxa_user_data';
 
 class LeaderboardService {
   // Kullanıcı adını kaydet

@@ -1,120 +1,87 @@
-# 🚀 ORDIX - Store Yayını Checklist
+# YUXA — İlk yayın checklist (sıfırdan)
 
-## ✅ Tamamlanan Özellikler
+YUXA, **yeni paket adı** (`com.yuxa.sayisiralama`) ile mağazada **yeni bir uygulama** olarak yayınlanır. Eski ORDIX sürümüne güncelleme olarak bağlanmaz.
 
-### 📱 Temel Oyun
-- [x] Sayı sıralama oyunu mekaniği
-- [x] Gökyüzü mavisi tema tasarımı
-- [x] Responsive tasarım (J6+ Prime dahil)
-- [x] Ses efektleri ve müzik sistemi
-- [x] Haptic feedback desteği
-- [x] Animasyonlu geçişler
+## Tamamlanan özellikler
 
-### 🎯 Store Özellikleri
-- [x] Profesyonel oyun bitti ekranı
-- [x] Skor kaydetme sistemi (AsyncStorage)
-- [x] İstatistikler sayfası
-- [x] Gizlilik politikası linki
-- [x] Versiyon bilgisi güncellendi (1.0.0)
+### Oyun
+- [x] Sayı sıralama mekaniği (klasik + ek modlar)
+- [x] YUXA markası: turuncu tema, `logo-yuxa.png` ikon / splash
+- [x] Responsive arayüz
+- [x] Ses ve müzik (`expo-av`)
+- [x] Haptic feedback
+- [x] Animasyonlar ve menü tasarımı
 
-### 📊 İstatistikler
-- [x] En yüksek skor takibi
-- [x] Toplam oyun sayısı
-- [x] Ortalama skor hesaplama
-- [x] Yeni rekor bildirimi
+### Çevrimiçi ve ilerleme
+- [x] Skor tablosu (Firebase)
+- [x] Başarımlar ve istatistikler
+- [x] Yerel skor / kullanıcı adı (AsyncStorage)
 
-### 🔧 Teknik
-- [x] App.json store konfigürasyonu
-- [x] EAS build konfigürasyonu
-- [x] AsyncStorage entegrasyonu
-- [x] Cross-platform uyumluluk
+### Teknik
+- [x] `app.json` mağaza ayarları (`version` 1.0.0, Android `versionCode` 1 ile ilk yayına uygun)
+- [x] EAS `eas.json` profilleri
+- [x] Expo Router + TypeScript
 
-## 🚀 Store Yayını Adımları
+## Yayın adımları
 
-### 1. 📱 Android (Google Play Store)
+### Android (Google Play — yeni uygulama)
+1. [Play Console](https://play.google.com/console) üzerinde **yeni uygulama** oluşturun.
+2. Paket adı: **`com.yuxa.sayisiralama`** (manifest / `app.json` ile aynı olmalı).
+3. Yerelde `.env` içinde Firebase `EXPO_PUBLIC_*` değişkenlerini doldurun.
+4. Derleme:
+   ```bash
+   npm install -g eas-cli
+   eas login
+   eas build --platform android --profile production
+   ```
+5. Yükleme: `eas submit --platform android` veya Play Console üzerinden AAB yükleyin.
+
+### iOS (App Store)
 ```bash
-# EAS CLI yükle
-npm install -g @expo/eas-cli
-
-# EAS'a giriş yap
-eas login
-
-# Android build
-eas build --platform android --profile production
-
-# Store'a yükle
-eas submit --platform android
-```
-
-### 2. 🍎 iOS (App Store)
-```bash
-# iOS build
 eas build --platform ios --profile production
-
-# App Store'a yükle
 eas submit --platform ios
 ```
 
-### 3. 📋 Store Bilgileri
+## Mağaza metni (Türkçe — taslak)
 
-#### Uygulama Açıklaması (Türkçe)
 ```
-🎮 ORDIX - Sayı Sıralama Oyunu
+YUXA - Sayı Sıralama Oyunu
 
-Eğlenceli ve bağımlılık yapan sayı sıralama oyunu! Zihin egzersizi yapmak ve matematik becerilerinizi geliştirmek için mükemmel.
+Sayıları küçükten büyüğe sırala, rekorunu kır, skor tablosunda yüksel ve başarımları topla. Hızlı turlar, net kurallar, zihin egzersizi.
 
-🎯 NASIL OYNANIR:
-• Sayıları küçükten büyüğe doğru sırala
-• Doğru yerleştirme yaparak puan kazan
-• En yüksek skoru hedefle!
+Nasıl oynanır:
+• Gelen sayıları doğru sırayla yerleştir
+• Hata yapmadan devam et, puan topla
+• Liderlik tablosunda yerini gör
 
-✨ ÖZELLİKLER:
-• Sezgisel ve kolay oynanış
-• Güzel görsel tasarım
-• Ses efektleri ve müzik
-• İstatistik takibi
-• Tüm telefon boyutlarında uyumlu
-
-🏆 Hem eğlenceli hem öğretici!
+Özellikler:
+• Skor tablosu ve başarımlar
+• Ses, titreşim ve akıcı arayüz
+• Farklı ekran boyutlarına uyum
 ```
 
-#### Anahtar Kelimeler
-- sayı oyunu
-- matematik
-- sıralama
-- zeka oyunu
-- eğitim
-- puzzle
-- bulmaca
+**Anahtar kelimeler (örnek):** sayı oyunu, sıralama, bulmaca, zeka, matematik, YUXA
 
-#### Kategori
-- Oyunlar > Bulmaca
-- Oyunlar > Eğitim
+**Kategori:** Oyunlar → Bulmaca / Eğitim
 
-### 4. 📸 Store Görselleri Gerekli
-- [ ] App Icon (1024x1024)
-- [ ] Feature Graphic (1024x500)
-- [ ] Screenshots (telefon + tablet)
-- [ ] Promo video (opsiyonel)
+## Görseller
+- [ ] Telefon ekran görüntüleri (telefon + istenirse tablet)
+- [ ] Feature graphic (Android, 1024×500)
+- [ ] 512 ikon Play’e otomatik veya 1024 master (`assets/images/logo-yuxa.png` kaynak)
+- [ ] (Opsiyonel) tanıtım videosu
 
-### 5. 🔒 Yasal Gereksinimler
-- [ ] Gizlilik politikası URL'i
-- [ ] Kullanım şartları (opsiyonel)
-- [ ] Yaş sınırı: 3+ (Herkes)
+## Yasal
+- [ ] Gizlilik politikası URL’i — `privacy-policy/index.html` → `npm run deploy:privacy` (Vercel) sonrası `.env` içine `EXPO_PUBLIC_PRIVACY_POLICY_URL` ekleyin
+- [ ] (İsteğe bağlı) kullanım şartları
+- [ ] İçerik derecelendirmesi (ör. Herkes / 3+)
 
-### 6. 📊 Store Optimizasyonu (ASO)
-- [ ] Başlık optimizasyonu
-- [ ] Açıklama optimizasyonu
-- [ ] Anahtar kelime araştırması
-- [ ] Görsel optimizasyonu
+## ASO (kısa)
+- [ ] Başlık ve kısa açıklama A/B düşünümü
+- [ ] Ekran görüntüsü sırası: oynanış → skor tablosu → başarımlar
 
-## 🎯 Gelecek Güncellemeler
-- [ ] Çoklu dil desteği
-- [ ] Leaderboard sistemi
-- [ ] Başarım sistemi
-- [ ] Farklı oyun modları
-- [ ] Tema seçenekleri
+## Sonraki sürümler (fikir)
+- [ ] Çoklu dil
+- [ ] Ek oyun modları / temalar
 
-## 📞 Destek
-- Email: support@ordix.com
-- Website: www.ordix.com 
+## Destek
+- E-posta ve site adreslerinizi buraya yazın (örnek yer tutucu kullanmayın).

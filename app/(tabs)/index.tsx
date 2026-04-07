@@ -6,7 +6,8 @@ import { Image } from 'expo-image';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Modal, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Constants from 'expo-constants';
+import { Alert, Animated, Dimensions, Linking, Modal, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AchievementPopup } from '../components/achievement-popup';
 import { AchievementsScreen } from '../components/achievements-screen';
 import { AnimatedBackground } from '../components/animated-background';
@@ -243,10 +244,10 @@ const LoadingScreen = ({ onLoadingComplete }) => {
         ]}>
           {/* Sadece Uygulama İkonu */}
           <View style={styles.iconContainer}>
-        <Image
-              source={require('../../assets/images/icon.png')}
+            <Image
+              source={require('../../assets/images/logo-yuxa.png')}
               style={styles.loadingIcon}
-              resizeMode="contain"
+              contentFit="cover"
             />
           </View>
 
@@ -1757,11 +1758,13 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
              styles.titleContainer,
              { transform: [{ scale: titleBounce }] }
            ]}>
-             <Image
-               source={require('../../assets/images/icon.png')}
-               style={styles.gameLogo}
-               contentFit="contain"
-             />
+             <View style={styles.gameLogoCircle}>
+               <Image
+                 source={require('../../assets/images/logo-yuxa.png')}
+                 style={styles.gameLogoImage}
+                 contentFit="cover"
+               />
+             </View>
            </Animated.View>
 
 
@@ -1884,12 +1887,23 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
 
           {/* Versiyon Bilgisi */}
           <View style={styles.versionContainer}>
-            <Text style={styles.versionText}>Sürüm 2</Text>
+            <Text style={styles.versionText}>
+              Sürüm {Constants.expoConfig?.version ?? '1.0.0'}
+            </Text>
             <TouchableOpacity 
               style={styles.privacyButton}
               onPress={() => {
-                // Privacy policy link - Store yayınında gerçek link olacak
-                console.log('Gizlilik Politikası açılacak');
+                const url = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
+                if (url && /^https?:\/\//i.test(url)) {
+                  Linking.openURL(url).catch(() => {
+                    Alert.alert('Bağlantı açılamadı', 'Gizlilik politikası sayfası açılırken bir hata oluştu.');
+                  });
+                  return;
+                }
+                Alert.alert(
+                  'Gizlilik politikası',
+                  'EXPO_PUBLIC_PRIVACY_POLICY_URL henüz ayarlanmadı. .env dosyasına yayınladığınız politika adresini ekleyin (ör. Vercel URL’niz).'
+                );
               }}
             >
               <Text style={styles.privacyText}>Gizlilik Politikası</Text>
@@ -2707,6 +2721,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  gameLogoCircle: {
+    width: isSmallScreen ? 220 : isMediumScreen ? 160 : 200,
+    height: isSmallScreen ? 220 : isMediumScreen ? 160 : 200,
+    borderRadius: isSmallScreen ? 110 : isMediumScreen ? 80 : 100,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    alignSelf: 'center',
+    backgroundColor: '#FF7A33',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 14,
+  },
+  gameLogoImage: {
+    width: '100%',
+    height: '100%',
+  },
   titleBackground: {
     paddingHorizontal: 40,
     paddingVertical: 20,
@@ -2719,11 +2752,6 @@ const styles = StyleSheet.create({
     elevation: 15,
     borderWidth: 4,
     borderColor: '#FFF',
-  },
-  gameLogo: {
-    width: isSmallScreen ? 250 : isMediumScreen ? 150 :   200,
-    height: isSmallScreen ? 250 : isMediumScreen ? 150 : 110,
-    alignSelf: 'center',
   },
   gameTitle: {
     fontSize: responsiveSize.titleFont,
@@ -3366,7 +3394,14 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   iconContainer: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    overflow: 'hidden',
     marginBottom: 50,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FF7A33',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.4,
@@ -3374,9 +3409,8 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   loadingIcon: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: '100%',
+    height: '100%',
   },
   loadingTitleBackground: {
     paddingHorizontal: 30,

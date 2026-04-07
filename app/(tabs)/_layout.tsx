@@ -11,7 +11,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Sayı Sıralama Oyunu',
+          title: 'YUXA - Sayı Sıralama Oyunu',
         }}
       />
     </Tabs>

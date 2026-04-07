@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YUXA — Gizlilik Politikası</title>
+  <meta name="description" content="YUXA Sayı Sıralama Oyunu gizlilik politikası: kişisel veriler, cihaz verileri ve Firebase kullanımı." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #0a0e14;
+      --accent: #ff7a33;
+      --accent-soft: rgba(255, 122, 51, 0.35);
+      --cyan: #4ecdc4;
+      --card: rgba(22, 30, 42, 0.72);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #e8eef4;
+      --muted: #8b9cb3;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 1.05rem;
+      overflow-x: hidden;
+    }
+
+    /* Animated atmosphere */
+    .scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: var(--bg-deep);
+      overflow: hidden;
+    }
+
+    .scene::before {
+      content: "";
+      position: absolute;
+      inset: -50%;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(255, 122, 51, 0.22), transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(78, 205, 196, 0.12), transparent 45%),
+        radial-gradient(ellipse 50% 60% at 70% 90%, rgba(255, 122, 51, 0.15), transparent 50%),
+        radial-gradient(ellipse 40% 50% at 10% 80%, rgba(100, 120, 200, 0.1), transparent 45%);
+      animation: aurora 18s ease-in-out infinite alternate;
+    }
+
+    @keyframes aurora {
+      0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translate(4%, 3%) rotate(8deg) scale(1.08); opacity: 0.95; }
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.5;
+      animation: floatOrb 12s ease-in-out infinite;
+    }
+
+    .orb:nth-child(1) {
+      width: min(45vw, 320px);
+      height: min(45vw, 320px);
+      background: var(--accent);
+      top: 10%;
+      left: -5%;
+      animation-delay: 0s;
+    }
+
+    .orb:nth-child(2) {
+      width: min(35vw, 260px);
+      height: min(35vw, 260px);
+      background: var(--cyan);
+      bottom: 15%;
+      right: -8%;
+      animation-delay: -4s;
+      opacity: 0.35;
+    }
+
+    .orb:nth-child(3) {
+      width: min(25vw, 180px);
+      height: min(25vw, 180px);
+      background: #a78bfa;
+      top: 45%;
+      right: 20%;
+      animation-delay: -7s;
+      opacity: 0.25;
+    }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(20px, -30px) scale(1.05); }
+      66% { transform: translate(-15px, 15px) scale(0.95); }
+    }
+
+    .noise {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Layout */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      padding: clamp(1rem, 4vw, 2.5rem);
+      padding-bottom: 4rem;
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 40rem;
+      margin: 0 auto 2rem;
+      animation: heroIn 1s var(--ease-out) both;
+    }
+
+    @keyframes heroIn {
+      from {
+        opacity: 0;
+        transform: translateY(28px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(255, 122, 51, 0.12);
+      border: 1px solid var(--accent-soft);
+      margin-bottom: 1rem;
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 51, 0.25); }
+      50% { box-shadow: 0 0 24px 2px rgba(255, 122, 51, 0.15); }
+    }
+
+    .hero h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.75rem, 5vw, 2.35rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #ffb088 45%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .hero .meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0;
+    }
+
+    main.card {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: clamp(1.5rem, 4vw, 2.25rem);
+      border-radius: 24px;
+      background: var(--card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      animation: cardIn 0.9s var(--ease-out) 0.12s both;
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(36px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .intro {
+      margin: 0 0 1.5rem;
+      color: var(--text);
+    }
+
+    .contact-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.25rem;
+      margin: 1rem 0 1.75rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(255, 122, 51, 0.12), rgba(78, 205, 196, 0.08));
+      border: 1px solid rgba(255, 122, 51, 0.25);
+    }
+
+    .contact-box a.email {
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      word-break: break-all;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+
+    .contact-box a.email:hover {
+      color: var(--accent);
+      text-shadow: 0 0 20px rgba(255, 122, 51, 0.4);
+    }
+
+    .btn-copy {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.2s var(--ease-out), background 0.2s, border-color 0.2s;
+    }
+
+    .btn-copy:hover {
+      background: rgba(255, 122, 51, 0.2);
+      border-color: var(--accent-soft);
+      transform: translateY(-2px);
+    }
+
+    .btn-copy:active {
+      transform: translateY(0);
+    }
+
+    .btn-copy.copied {
+      background: rgba(78, 205, 196, 0.25);
+      border-color: rgba(78, 205, 196, 0.5);
+    }
+
+    h2 {
+      font-size: 1.12rem;
+      font-weight: 600;
+      margin: 1.85rem 0 0.65rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      background: linear-gradient(135deg, var(--accent), #ff9a5c);
+      color: #1a0a00;
+    }
+
+    p, ul { margin: 0 0 1rem; }
+    ul { padding-left: 1.2rem; }
+    li { margin-bottom: 0.45rem; }
+
+    a:not(.email) {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    a:not(.email):hover {
+      border-bottom-color: var(--accent);
+    }
+
+    .en {
+      margin-top: 2.25rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .en h2 .num {
+      background: linear-gradient(135deg, var(--cyan), #7ee8e0);
+      color: #042a27;
+    }
+
+    .en p {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition:
+        opacity 0.65s var(--ease-out),
+        transform 0.65s var(--ease-out);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer.note {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      animation: fadeIn 1s ease 0.5s both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene" aria-hidden="true">
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <div class="noise"></div>
+  </div>
+
+  <div class="wrap">
+    <header class="hero">
+      <span class="badge">Yasal · Şeffaflık</span>
+      <h1>YUXA — Gizlilik Politikası</h1>
+      <p class="meta">Son güncelleme: 7 Nisan 2026 · Sayı Sıralama Oyunu</p>
+    </header>
+
+    <main class="card">
+      <p class="intro reveal">
+        Bu metin, YUXA mobil uygulamasını kullanırken kişisel ve cihazla ilgili verilerin nasıl işlendiğini açıklar.
+        Uygulamayı kullanmaya devam ederek bu politikada özetlenen uygulamaları kabul etmiş sayılırsınız.
+      </p>
+
+      <section class="reveal">
+        <h2><span class="num">1</span> Veri sorumlusu ve iletişim</h2>
+        <p>
+          Sorularınız, veri silme / düzeltme talepleriniz veya gizlilikle ilgili diğer konular için bizimle iletişime geçebilirsiniz:
+        </p>
+        <div class="contact-box">
+          <a class="email" href="mailto:infoyesdeveloper@gmail.com?subject=YUXA%20-%20Gizlilik%20Politikas%C4%B1">infoyesdeveloper@gmail.com</a>
+          <button type="button" class="btn-copy" id="copyEmail" aria-label="E-postayı kopyala">Kopyala</button>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">2</span> Hangi verileri topluyoruz?</h2>
+        <ul>
+          <li><strong>Kullanıcı adı (isteğe bağlı):</strong> Skor tablosunda görünen adınızı siz belirlersiniz; uygulama bunu yerel olarak ve (açık olduğunda) bulutta saklayabilir.</li>
+          <li><strong>Oyun skorları:</strong> En iyi skorunuz ve sıralama için işlenir; skor tablosu özelliği kullanıldığında sunucuda saklanabilir.</li>
+          <li><strong>Cihaz tanımlayıcısı:</strong> Uygulama, skor tablosu ve tutarlılık için cihazınıza özgü, rastgele üretilmiş bir kimlik oluşturabilir ve cihazınızda (AsyncStorage) saklar. Bu kimlik kişisel bilginiz (ad, e-posta vb.) değildir.</li>
+          <li><strong>Yerel oyun verileri:</strong> İstatistikler, başarımlar, oyun sayıları ve tercihler cihazınızda yerel olarak saklanabilir.</li>
+        </ul>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">3</span> Verileri nasıl kullanıyoruz?</h2>
+        <ul>
+          <li>Oyun deneyimini sunmak, skor tablosunu göstermek ve ilerlemenizi kaydetmek.</li>
+          <li>Hile veya kötüye kullanımı sınırlamak için makul ölçüde cihaz/skor ilişkisinden yararlanmak.</li>
+          <li>Yasal yükümlülükleri yerine getirmek (gerektiğinde).</li>
+        </ul>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">4</span> Üçüncü taraflar ve bulut hizmetleri</h2>
+        <p>
+          Uygulama, veri tabanı ve (yapılandırmaya bağlı olarak) analitik için <strong>Google Firebase</strong> (Firebase / Firestore ve ilgili hizmetler) kullanabilir.
+          Firebase tarafında verilerin işlenmesi Google’ın gizlilik politikasına tabidir:
+          <a href="https://policies.google.com/privacy" rel="noopener noreferrer" target="_blank">Google Gizlilik Politikası</a>.
+        </p>
+        <p>
+          Kodda Firebase Analytics için altyapı bulunabilir; etkinleştirildiğinde anonim kullanım veya cihazla ilişkili ölçümler toplanabilir.
+          Hangi Firebase ürünlerinin açık olduğu proje yapılandırmanıza bağlıdır.
+        </p>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">5</span> Verilerin saklanması ve süresi</h2>
+        <p>
+          Yerel veriler cihazınızda kalır; uygulamayı silerseniz bu veriler genellikle silinir (işletim sistemi davranışına bağlıdır).
+          Bulutta saklanan skor / kullanıcı adı verileri, hizmeti işletmek ve skor tablosunu sağlamak için makul süre boyunca tutulabilir; silme talebinizi yukarıdaki e-posta adresine iletebilirsiniz.
+        </p>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">6</span> Çocukların gizliliği</h2>
+        <p>
+          Uygulama genel kitleye yöneliktir. Bilerek 13 yaşın altındaki çocuklardan kişisel veri toplamayı hedeflemiyoruz.
+          Ebeveynler çocuklarının cihaz kullanımından sorumludur.
+        </p>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">7</span> Haklarınız (KVKK / GDPR çerçevesinde özet)</h2>
+        <p>
+          Bulut üzerinde işlenen verileriniz için erişim, düzeltme, silme veya itiraz taleplerinizi <strong>infoyesdeveloper@gmail.com</strong> üzerinden iletebilirsiniz.
+          Talebin yerine getirilmesi teknik ve yasal sınırlamalara tabidir.
+        </p>
+      </section>
+
+      <section class="reveal">
+        <h2><span class="num">8</span> Politika değişiklikleri</h2>
+        <p>
+          Bu metni zaman zaman güncelleyebiliriz. Önemli değişikliklerde uygulama veya mağaza açıklaması üzerinden bilgilendirme yapılması hedeflenir.
+          “Son güncelleme” tarihini kontrol etmeniz önerilir.
+        </p>
+      </section>
+
+      <div class="en reveal">
+        <h2><span class="num">EN</span> English summary</h2>
+        <p>
+          <strong>YUXA</strong> is a number-sorting game. We may process: a <strong>display name</strong> you choose,
+          <strong>scores</strong> for leaderboards, a <strong>random device identifier</strong> stored on your device,
+          and <strong>local game stats/achievements</strong>. Cloud processing may use <strong>Google Firebase</strong>
+          (e.g. Firestore). Analytics may be available depending on configuration.
+          Privacy requests: <a href="mailto:infoyesdeveloper@gmail.com">infoyesdeveloper@gmail.com</a>.
+          See the Turkish sections above for full detail.
+        </p>
+      </div>
+    </main>
+
+    <p class="note">© YUXA · Gizlilik politikası</p>
+  </div>
+
+  <script>
+    (function () {
+      var email = "infoyesdeveloper@gmail.com";
+      var btn = document.getElementById("copyEmail");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          function done() {
+            btn.classList.add("copied");
+            var t = btn.textContent;
+            btn.textContent = "Kopyalandı!";
+            setTimeout(function () {
+              btn.classList.remove("copied");
+              btn.textContent = t;
+            }, 2000);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(email).then(done).catch(function () {
+              window.location.href = "mailto:" + email;
+            });
+          } else {
+            window.location.href = "mailto:" + email;
+          }
+        });
+      }
+
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) return;
+
+      var nodes = document.querySelectorAll(".reveal");
+      if (!nodes.length || !("IntersectionObserver" in window)) {
+        nodes.forEach(function (el) { el.classList.add("visible"); });
+        return;
+      }
+
+      var io = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("visible");
+            io.unobserve(entry.target);
+          });
+        },
+        { root: null, rootMargin: "0px 0px -8% 0px", threshold: 0.08 }
+      );
+
+      nodes.forEach(function (el, i) {
+        el.style.transitionDelay = Math.min(i * 0.06, 0.45) + "s";
+        io.observe(el);
+      });
+    })();
+  </script>
+</body>
+</html>
