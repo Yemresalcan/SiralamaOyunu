@@ -12,6 +12,29 @@
 
 </div>
 
+**Portfolio / CV:** Cross-platform **Expo + React Native + TypeScript** oyunu; **Firebase** skor tablosu, **EAS** ile mağaza derlemesi, **Expo Router** ile yapılandırılmış ekranlar.
+
+---
+
+## Screenshots / Ekran görüntüleri
+
+Mağaza ve portföy için `assets/screens/` altında **iPhone** ekran görüntüleri (PNG). Ana akış: menü → oyun → skor / başarımlar / skor tablosu.
+
+<p align="center">
+<table>
+<tr>
+<td align="center" width="33%"><img src="assets/screens/ios_1_1.png" width="240" alt="YUXA — ekran 1"/></td>
+<td align="center" width="33%"><img src="assets/screens/ios_1_2.png" width="240" alt="YUXA — ekran 2"/></td>
+<td align="center" width="33%"><img src="assets/screens/ios_1_3.png" width="240" alt="YUXA — ekran 3"/></td>
+</tr>
+<tr>
+<td align="center"><img src="assets/screens/ios_1_4.png" width="240" alt="YUXA — ekran 4"/></td>
+<td align="center"><img src="assets/screens/ios_1_5.png" width="240" alt="YUXA — ekran 5"/></td>
+<td align="center"></td>
+</tr>
+</table>
+</p>
+
 ---
 
 ## English
@@ -112,6 +135,7 @@ This repo includes `eas.json` profiles (`development`, `preview`, `production`, 
 
 - `app/` — Screens, tabs, components, Firebase config, services (leaderboard, achievements)
 - `assets/` — Images, fonts, app icon & splash (`images/logo-yuxa.png`)
+- `assets/screens/` — Store / portfolio screenshots (`ios_1_1.png` … `ios_1_5.png`)
 - `android/` — Native Android project (prebuild / local runs)
 
 ### Learn more
@@ -224,6 +248,7 @@ Projede `eas.json` profilleri bulunur (`development`, `preview`, `production` vb
 
 - `app/` — Ekranlar, sekmeler, bileşenler, Firebase yapılandırması, servisler (skor tablosu, başarımlar)
 - `assets/` — Görseller, fontlar, uygulama ikonu ve splash (`images/logo-yuxa.png`)
+- `assets/screens/` — Mağaza ve portföy için ekran görüntüleri (`ios_1_1.png` … `ios_1_5.png`)
 - `android/` — Yerel Android projesi
 
 ### Daha fazla bilgi
