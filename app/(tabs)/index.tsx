@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import Constants from 'expo-constants';
 import { Alert, Animated, Dimensions, Linking, Modal, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { AchievementPopup } from '../components/achievement-popup';
 import { AchievementsScreen } from '../components/achievements-screen';
 import { AnimatedBackground } from '../components/animated-background';
@@ -1719,37 +1720,18 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
     return (
      <View style={styles.menuContainer}>
        <AnimatedBackground>
-         {/* Arka Plan Bulutları */}
-         <View style={styles.cloudsContainer}>
-           <Text style={styles.cloud}>☁️</Text>
-           <Text style={[styles.cloud, styles.cloud2]}>☁️</Text>
-           <Text style={[styles.cloud, styles.cloud3]}>☁️</Text>
-         </View>
-
-         {/* Işıltı Efektleri */}
-         <Animated.View style={[
-           styles.sparkleContainer,
-           { transform: [{ rotate: sparkleRotation }] }
-         ]}>
-           <Text style={styles.sparkle}>✨</Text>
-           <Text style={[styles.sparkle, styles.sparkle2]}>⭐</Text>
-           <Text style={[styles.sparkle, styles.sparkle3]}>💫</Text>
-         </Animated.View>
-
-         {/* Müzik Butonu */}
-         <TouchableOpacity 
-           style={styles.musicButton} 
+         {/* Müzik Butonu - Glass */}
+         <TouchableOpacity
+           style={styles.musicButton}
            onPress={() => {
              playSound('button');
              onToggleMusic();
            }}
+           activeOpacity={0.85}
          >
-           <ExpoLinearGradient
-             colors={['#FFD700', '#FFA500', '#FF8C00']}
-             style={styles.musicButtonGradient}
-           >
+           <View style={styles.musicButtonGradient}>
              <Text style={styles.musicButtonText}>{musicEnabled ? '🔊' : '🔇'}</Text>
-           </ExpoLinearGradient>
+           </View>
          </TouchableOpacity>
 
          <View style={styles.menuContent}>
@@ -1758,11 +1740,11 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
              styles.titleContainer,
              { transform: [{ scale: titleBounce }] }
            ]}>
-             <View style={styles.gameLogoCircle}>
+             <View style={styles.gameLogoCard}>
                <Image
                  source={require('../../assets/images/logo-yuxa.png')}
                  style={styles.gameLogoImage}
-                 contentFit="cover"
+                 contentFit="contain"
                />
              </View>
            </Animated.View>
@@ -1790,7 +1772,14 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
                     style={styles.playButtonGradientGlass}
                   >
                     <View style={styles.glassShine} />
-                    <Text style={styles.playButtonTextGlass}>🎮 KÖR SIRALAMA</Text>
+                    <View style={styles.playButtonIconWrap}>
+                      <Text style={styles.playButtonIcon}>🎮</Text>
+                    </View>
+                    <View style={styles.playButtonTextWrap}>
+                      <Text style={styles.playButtonTitle}>KÖR SIRALAMA</Text>
+                      <Text style={styles.playButtonSubtitle}>Hafıza ve sezgi modu</Text>
+                    </View>
+                    <Text style={styles.playButtonArrow}>›</Text>
                   </ExpoLinearGradient>
                 </BlurView>
               </TouchableOpacity>
@@ -1799,7 +1788,7 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
               <View style={styles.buttonSpacer} />
 
               {/* HIZ SIRALA Butonu - Glassmorphism */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.playButtonGlassPurple}
                 onPress={() => {
                   playSound('button');
@@ -1814,7 +1803,14 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
                     style={styles.playButtonGradientGlass}
                   >
                     <View style={styles.glassShine} />
-                    <Text style={styles.playButtonTextGlass}>🎪 ÇILGIN SIRALAMA</Text>
+                    <View style={styles.playButtonIconWrap}>
+                      <Text style={styles.playButtonIcon}>🎪</Text>
+                    </View>
+                    <View style={styles.playButtonTextWrap}>
+                      <Text style={styles.playButtonTitle}>ÇILGIN SIRALAMA</Text>
+                      <Text style={styles.playButtonSubtitle}>Hızlı tempolu mod</Text>
+                    </View>
+                    <Text style={styles.playButtonArrow}>›</Text>
                   </ExpoLinearGradient>
                 </BlurView>
               </TouchableOpacity>
@@ -1824,71 +1820,63 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
 
            {/* Alt İkonlar */}
            <View style={styles.bottomIconsContainer}>
-             <TouchableOpacity 
+             <TouchableOpacity
                style={styles.bottomIcon}
                onPress={() => {
                  playSound('button');
                  onLeaderboard();
                }}
+               activeOpacity={0.85}
              >
-               <ExpoLinearGradient
-                 colors={['#FF6B35', '#F7931E', '#FFD700']}
-                 style={styles.bottomIconGradient}
-               >
+               <View style={styles.bottomIconGradient}>
                  <Text style={styles.bottomIconText}>🏆</Text>
-               </ExpoLinearGradient>
+               </View>
              </TouchableOpacity>
 
-             <TouchableOpacity 
+             <TouchableOpacity
                style={styles.bottomIcon}
                onPress={() => {
                  playSound('button');
                  onAchievements();
                }}
+               activeOpacity={0.85}
              >
-               <ExpoLinearGradient
-                 colors={gradients.gold}
-                 style={styles.bottomIconGradient}
-               >
+               <View style={styles.bottomIconGradient}>
                  <Text style={styles.bottomIconText}>🎖️</Text>
-               </ExpoLinearGradient>
+               </View>
              </TouchableOpacity>
-             
-             <TouchableOpacity 
+
+             <TouchableOpacity
                style={styles.bottomIcon}
                onPress={() => {
                  playSound('button');
                  onHowToPlay();
                }}
+               activeOpacity={0.85}
              >
-               <ExpoLinearGradient
-                 colors={['#FFB347', '#FF8C00', '#FFA500']}
-                 style={styles.bottomIconGradient}
-               >
+               <View style={styles.bottomIconGradient}>
                  <Text style={styles.bottomIconText}>📚</Text>
-               </ExpoLinearGradient>
+               </View>
              </TouchableOpacity>
-             
-             <TouchableOpacity 
+
+             <TouchableOpacity
                style={styles.bottomIcon}
                onPress={() => {
                  playSound('button');
                  onSettings();
                }}
+               activeOpacity={0.85}
              >
-               <ExpoLinearGradient
-                 colors={['#95A5A6', '#7F8C8D', '#BDC3C7']}
-                 style={styles.bottomIconGradient}
-               >
+               <View style={styles.bottomIconGradient}>
                  <Text style={styles.bottomIconText}>⚙️</Text>
-               </ExpoLinearGradient>
+               </View>
              </TouchableOpacity>
            </View>
 
           {/* Versiyon Bilgisi */}
           <View style={styles.versionContainer}>
             <Text style={styles.versionText}>
-              Sürüm {Constants.expoConfig?.version ?? '1.0.0'}
+              YUXA · v{Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
             <TouchableOpacity 
               style={styles.privacyButton}
@@ -1914,6 +1902,81 @@ const MainMenu = ({ onStartGame, onStartBubbleSort, onHowToPlay, onSettings, onS
      </View>
    );
 };
+
+interface SlotItemProps {
+  index: number;
+  value: number | undefined;
+  isEmpty: boolean;
+  isWrong: boolean;
+  isEasyRound: boolean;
+  gameOver: boolean;
+  onPress: () => void;
+}
+
+function SlotItem({ index, value, isEmpty, isWrong, isEasyRound, gameOver, onPress }: SlotItemProps) {
+  const hasValue = value !== undefined;
+  const scale = useSharedValue(hasValue ? 1 : 1);
+  const shakeX = useSharedValue(0);
+  const wasFilled = useRef(hasValue);
+
+  useEffect(() => {
+    if (hasValue && !wasFilled.current) {
+      scale.value = 0;
+      scale.value = withSpring(1, { damping: 9, stiffness: 200, mass: 0.6 });
+      wasFilled.current = true;
+    } else if (!hasValue) {
+      wasFilled.current = false;
+    }
+  }, [hasValue]);
+
+  useEffect(() => {
+    if (isWrong) {
+      shakeX.value = withSequence(
+        withTiming(-9, { duration: 55 }),
+        withTiming(9, { duration: 55 }),
+        withTiming(-7, { duration: 55 }),
+        withTiming(7, { duration: 55 }),
+        withTiming(-4, { duration: 55 }),
+        withTiming(0, { duration: 55 })
+      );
+    }
+  }, [isWrong]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: shakeX.value },
+      { scale: hasValue ? scale.value : 1 },
+    ],
+  }));
+
+  return (
+    <View style={styles.positionContainer}>
+      <Text style={styles.positionNumber}>{index + 1}</Text>
+      <Reanimated.View style={[{ flex: 1 }, animatedStyle]}>
+        <TouchableOpacity
+          style={[
+            styles.numberSlot,
+            isEmpty && !gameOver && styles.emptySlot,
+            isWrong && styles.wrongSlot,
+            isEasyRound && isEmpty && styles.easyRoundSlot,
+          ]}
+          onPress={onPress}
+          disabled={gameOver || !isEmpty}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          {hasValue ? (
+            <Text style={[styles.slotNumber, isWrong && styles.wrongNumber]}>
+              {value}
+            </Text>
+          ) : (
+            !gameOver && <Text style={styles.emptySlotText}>+</Text>
+          )}
+        </TouchableOpacity>
+      </Reanimated.View>
+    </View>
+  );
+}
 
 export default function GameScreen() {
   const router = useRouter();
@@ -2300,13 +2363,16 @@ export default function GameScreen() {
       }
     } else {
       playSound('wrong');
+      if (hapticEnabled) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
       setNumberList(newList);
       setWronglyPlaced({ value: currentNumber, index: slotIndex });
       setGameOver(true);
-      
+
       // Skorları kaydet
       saveGameStats(score);
-      
+
       // Achievement kontrolü - başarısız oyun
       checkAndShowAchievements({
         score: score,
@@ -2314,52 +2380,36 @@ export default function GameScreen() {
         isPerfect: false,
         won: false
       });
-      
-      setShowGameOverScreen(true);
+
+      // Shake animasyonu tamamlansın diye game-over ekranını geciktir
+      setTimeout(() => {
+        setShowGameOverScreen(true);
+      }, 650);
       console.log('❌ Yanlış yerleştirme!');
     }
   };
 
   const renderPositions = () => {
     const positions = [];
-    
+
     for (let i = 0; i < 10; i++) {
       const isEmpty = numberList[i] === undefined;
       const isWrong = gameOver && wronglyPlaced?.index === i;
-      
+
       positions.push(
-        <View key={`pos-${i + 1}`} style={styles.positionContainer}>
-          <Text style={styles.positionNumber}>{i + 1}</Text>
-          <TouchableOpacity 
-            style={[
-              styles.numberSlot, 
-              isEmpty && !gameOver && styles.emptySlot,
-              isWrong && styles.wrongSlot,
-              isEasyRound && styles.easyRoundSlot
-            ]}
-            onPress={() => {
-              console.log('🔘 TouchableOpacity tıklandı, slot:', i);
-              console.log('🔘 isEmpty:', isEmpty, 'gameOver:', gameOver);
-              handleSlotPress(i);
-            }}
-            disabled={gameOver || !isEmpty}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            {numberList[i] ? (
-              <Text style={[
-                styles.slotNumber, 
-                isWrong && styles.wrongNumber
-              ]}>
-                {numberList[i]}
-              </Text>
-            ) : (
-              !gameOver && (
-                <Text style={styles.emptySlotText}>+</Text>
-              )
-            )}
-          </TouchableOpacity>
-        </View>
+        <SlotItem
+          key={`pos-${i + 1}`}
+          index={i}
+          value={numberList[i]}
+          isEmpty={isEmpty}
+          isWrong={isWrong}
+          isEasyRound={isEasyRound}
+          gameOver={gameOver}
+          onPress={() => {
+            console.log('🔘 TouchableOpacity tıklandı, slot:', i);
+            handleSlotPress(i);
+          }}
+        />
       );
     }
 
@@ -2467,10 +2517,7 @@ export default function GameScreen() {
 
      return (
      <View style={styles.container}>
-       <ExpoLinearGradient
-         colors={['#87CEEB', '#98D8E8', '#B0E0E6']}
-         style={styles.gameBackground}
-       >
+       <AnimatedBackground>
          <View style={styles.header}>
            <TouchableOpacity 
              style={styles.backButton} 
@@ -2545,43 +2592,10 @@ A = π r²    V = ⁴⁄₃πr³`}
                <Text style={styles.scoreButtonText}>🏆 {score}</Text>
              </ExpoLinearGradient>
            </TouchableOpacity>
-           
-           {gameOver && (
-             <View style={styles.buttonContainer}>
-               <TouchableOpacity 
-                 onPress={() => {
-                   playSound('button');
-                   initializeGame();
-                 }} 
-                 style={styles.continueButton}
-               >
-                 <ExpoLinearGradient
-                   colors={['#58D68D', '#27AE60', '#7DCEA0']}
-                   style={styles.continueButtonGradient}
-                 >
-                   <Text style={styles.continueButtonText}>🚀 Devam Et</Text>
-                 </ExpoLinearGradient>
-               </TouchableOpacity>
-               <TouchableOpacity 
-                 onPress={() => {
-                   playSound('button');
-                   resetGame();
-                 }} 
-                 style={styles.restartButton}
-               >
-                 <ExpoLinearGradient
-                   colors={['#FF4757', '#FF3742', '#FF6B7A']}
-                   style={styles.restartButtonGradient}
-                 >
-                   <Text style={styles.restartButtonText}>🔄 Sıfırla</Text>
-                 </ExpoLinearGradient>
-               </TouchableOpacity>
-             </View>
-           )}
           </View>
         </View>
-      </ExpoLinearGradient>
-      
+      </AnimatedBackground>
+
       {/* Bonus Tur Alert */}
       {showBonusTurAlert && (
         <Modal
@@ -2689,24 +2703,28 @@ const styles = StyleSheet.create({
     top: isJ6PrimeSize ? 35 : isJ7PrimeSize ? 38 : isSamsungMidRange ? 40 : isLargeAndroidScreen ? 42 : 50,
     right: responsiveSize.containerPadding,
     zIndex: 10,
-    borderRadius: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 19 : isSamsungMidRange ? 20 : 25,
-    width: isJ6PrimeSize ? 35 : isJ7PrimeSize ? 37 : isSamsungMidRange ? 39 : isLargeAndroidScreen ? 42 : 50,
-    height: isJ6PrimeSize ? 35 : isJ7PrimeSize ? 37 : isSamsungMidRange ? 39 : isLargeAndroidScreen ? 42 : 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: isAndroid ? 2 : 4 },
-    shadowOpacity: responsiveSize.shadowOpacity,
-    shadowRadius: isAndroid ? 4 : 8,
-    elevation: isAndroid ? responsiveSize.elevation : 8,
+    borderRadius: 999,
+    width: isJ6PrimeSize ? 38 : isJ7PrimeSize ? 40 : isSamsungMidRange ? 42 : isLargeAndroidScreen ? 44 : 48,
+    height: isJ6PrimeSize ? 38 : isJ7PrimeSize ? 40 : isSamsungMidRange ? 42 : isLargeAndroidScreen ? 44 : 48,
+    shadowColor: '#1E3A5F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    overflow: 'hidden',
   },
   musicButtonGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: isJ6PrimeSize ? 18 : isJ7PrimeSize ? 19 : isSamsungMidRange ? 20 : 25,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   musicButtonText: {
-    fontSize: isJ6PrimeSize ? 16 : isJ7PrimeSize ? 17 : isSamsungMidRange ? 18 : isLargeAndroidScreen ? 19 : 24,
+    fontSize: isJ6PrimeSize ? 16 : isJ7PrimeSize ? 17 : isSamsungMidRange ? 18 : isLargeAndroidScreen ? 19 : 22,
   },
   menuContent: {
     flex: 1,
@@ -2721,20 +2739,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  gameLogoCircle: {
-    width: isSmallScreen ? 220 : isMediumScreen ? 160 : 200,
-    height: isSmallScreen ? 220 : isMediumScreen ? 160 : 200,
-    borderRadius: isSmallScreen ? 110 : isMediumScreen ? 80 : 100,
+  gameLogoCard: {
+    width: isSmallScreen ? 240 : isMediumScreen ? 200 : 240,
+    height: isSmallScreen ? 200 : isMediumScreen ? 170 : 200,
+    borderRadius: 32,
     overflow: 'hidden',
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
     alignSelf: 'center',
-    backgroundColor: '#FF7A33',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 14,
+    backgroundColor: 'transparent',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.45,
+    shadowRadius: 28,
+    elevation: 18,
   },
   gameLogoImage: {
     width: '100%',
@@ -2886,57 +2902,57 @@ const styles = StyleSheet.create({
   bottomIconsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '80%',
-    marginTop: 20,
+    width: '88%',
+    marginTop: 24,
   },
   bottomIcon: {
-    borderRadius: 20,
+    borderRadius: 18,
     overflow: 'hidden',
-    width: 60,
-    height: 60,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    width: 58,
+    height: 58,
+    shadowColor: '#1E3A5F',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.55)',
   },
   bottomIconGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 20,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
   bottomIconText: {
-    fontSize: 24,
+    fontSize: 26,
   },
   versionContainer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 18,
     left: 0,
     right: 0,
     alignItems: 'center',
     zIndex: 5,
   },
   versionText: {
-    fontSize: 12,
-    color: 'rgba(0, 0, 0, 0.14)',
-    fontWeight: '500',
-    textShadowColor: 'rgba(0, 0, 0, 0.58)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-    marginBottom: 5,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    marginBottom: 4,
   },
   privacyButton: {
-    paddingVertical: 5,
+    paddingVertical: 4,
     paddingHorizontal: 10,
   },
   privacyText: {
     fontSize: 10,
-    color: 'rgba(0, 0, 0, 0.3)',
-    fontWeight: '400',
-    textDecorationLine: 'underline',
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontWeight: '500',
+    letterSpacing: 0.5,
     textAlign: 'center',
   },
 
@@ -3688,9 +3704,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  gameBackground: {
-    flex: 1,
-  },
   header: {
     paddingTop: responsiveSize.containerPadding + 35,
     paddingHorizontal: responsiveSize.containerPadding,
@@ -3700,43 +3713,60 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButton: {
-    borderRadius: 20,
+    borderRadius: 999,
     overflow: 'hidden',
     shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   backButtonGradient: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 20,
+    borderRadius: 999,
     alignItems: 'center',
+    flexDirection: 'row',
   },
   backButtonText: {
     fontSize: 12,
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   headerCenter: {
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    shadowColor: '#1E3A5F',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   musicToggle: {
-    borderRadius: 20,
+    borderRadius: 999,
     width: 40,
     height: 40,
     overflow: 'hidden',
     shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   musicToggleGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 20,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -3769,20 +3799,16 @@ const styles = StyleSheet.create({
   },
   gameCounter: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#FF6B35',
-    textShadowColor: '#FFFFFF',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    letterSpacing: 0.3,
   },
   bonusText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#58D68D',
+    fontWeight: '800',
+    color: '#27AE60',
     marginTop: 5,
-    textShadowColor: '#FFFFFF',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    letterSpacing: 0.5,
   },
   gameArea: {
     flex: 1,
@@ -3796,67 +3822,93 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listWrapper: {
-    alignItems: 'center',
+    alignItems: 'stretch',
+    paddingHorizontal: 2,
   },
   positionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    paddingLeft: 6,
+    paddingRight: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    shadowColor: '#1E3A5F',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   positionNumber: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#FF6B35',
     width: 25,
     textAlign: 'center',
     textShadowColor: '#FFFFFF',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    marginRight: 4,
   },
   numberSlot: {
     width: Math.round((isSmallScreen ? 60 : isMediumScreen ? 70 : 80) * platformMultiplier),
     height: Math.round((isSmallScreen ? 40 : isMediumScreen ? 45 : 50) * platformMultiplier),
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: responsiveSize.borderRadius,
+    backgroundColor: '#FF8C42',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: responsiveSize.itemMargin - 4,
-    borderWidth: isAndroid ? 1.5 : 2,
-    borderColor: '#FF6B35',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: isAndroid ? 1 : 2 },
-    shadowOpacity: responsiveSize.shadowOpacity,
-    shadowRadius: isAndroid ? 2 : 4,
-    elevation: isAndroid ? responsiveSize.elevation - 4 : 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
     minHeight: Math.round((isSmallScreen ? 40 : isMediumScreen ? 45 : 50) * platformMultiplier),
     minWidth: Math.round((isSmallScreen ? 60 : isMediumScreen ? 70 : 80) * platformMultiplier),
   },
   emptySlot: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderColor: '#FFD700',
-    borderWidth: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255, 140, 66, 0.5)',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   easyRoundSlot: {
-    borderColor: '#58D68D',
+    borderColor: 'rgba(88, 214, 141, 0.7)',
     backgroundColor: 'rgba(88, 214, 141, 0.2)',
+    borderStyle: 'dashed',
   },
   wrongSlot: {
-    backgroundColor: '#a4161a',
-    borderColor: '#e63946',
+    backgroundColor: '#E63946',
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderStyle: 'solid',
+    shadowColor: '#E63946',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 6,
   },
   slotNumber: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   wrongNumber: {
-    color: '#E74C3C',
+    color: '#FFFFFF',
   },
   emptySlotText: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFD700',
+    fontWeight: '300',
+    color: 'rgba(255, 140, 66, 0.6)',
   },
   rightContainer: {
     flex: 1,
@@ -3867,122 +3919,78 @@ const styles = StyleSheet.create({
   chalkboard: {
     width: width * 0.45,
     height: width * 0.45,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
     borderRadius: 20,
-    borderWidth: 3,
-    borderColor: '#FF6B35',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
     padding: 15,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
     elevation: 8,
   },
   easyChalkboard: {
-    borderColor: '#58D68D',
+    borderColor: 'rgba(88, 214, 141, 0.8)',
     shadowColor: '#58D68D',
   },
   mathFormulas: {
-    position: 'absolute',
-    top: 15,
-    left: 15,
-    right: 15,
-    bottom: 15,
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.2)',
-    lineHeight: 14,
-    fontFamily: 'monospace',
+    display: 'none',
   },
   numberCircle: {
     width: isJ6PrimeSize ? 55 : isJ7PrimeSize ? 60 : isSamsungMidRange ? 62 : isLargeAndroidScreen ? 65 : 80,
     height: isJ6PrimeSize ? 55 : isJ7PrimeSize ? 60 : isSamsungMidRange ? 62 : isLargeAndroidScreen ? 65 : 80,
     borderRadius: isJ6PrimeSize ? 27.5 : isJ7PrimeSize ? 30 : isSamsungMidRange ? 31 : isLargeAndroidScreen ? 32.5 : 40,
-    backgroundColor: 'rgba(255, 107, 53, 0.9)',
-    borderWidth: isAndroid ? 2 : 3,
-    borderColor: '#FFFFFF',
+    backgroundColor: '#FF8C42',
+    borderWidth: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: isAndroid ? 2 : 4 },
-    shadowOpacity: responsiveSize.shadowOpacity,
-    shadowRadius: isAndroid ? 4 : 8,
-    elevation: isAndroid ? responsiveSize.elevation : 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   currentNumber: {
     fontSize: isJ6PrimeSize ? 24 : isJ7PrimeSize ? 26 : isSamsungMidRange ? 28 : isLargeAndroidScreen ? 30 : 36,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#FFFFFF',
-    textShadowColor: '#FF6B35',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   scoreButton: {
-    borderRadius: 15,
+    borderRadius: 999,
     marginTop: 20,
     minWidth: 80,
     overflow: 'hidden',
+    shadowColor: '#FFA500',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   scoreButtonGradient: {
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
-    borderRadius: 15,
+    borderRadius: 999,
   },
   scoreButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    marginTop: 15,
-    gap: 10,
-  },
-  continueButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  continueButtonGradient: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  continueButtonText: {
+    fontWeight: '800',
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  restartButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#FF4757',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  restartButtonGradient: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  restartButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-
   // Ayarlar Sayfası Stilleri
   settingsContainer: {
     flex: 1,
@@ -4155,13 +4163,54 @@ const styles = StyleSheet.create({
     ...glassmorphism.button,
   },
   playButtonGradientGlass: {
-    paddingVertical: 18,
-    paddingHorizontal: 40,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     borderRadius: radius.xl,
     position: 'relative',
-    minHeight: 65,
+    minHeight: 78,
+  },
+  playButtonIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playButtonIcon: {
+    fontSize: 28,
+  },
+  playButtonTextWrap: {
+    flex: 1,
+    marginLeft: 14,
+    marginRight: 8,
+  },
+  playButtonTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
+    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  playButtonSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 3,
+    letterSpacing: 0.3,
+  },
+  playButtonArrow: {
+    fontSize: 32,
+    fontWeight: '300',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginRight: 4,
+    lineHeight: 32,
   },
   playButtonTextGlass: {
     fontSize: 20,

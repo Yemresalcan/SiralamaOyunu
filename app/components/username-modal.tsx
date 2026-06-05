@@ -108,7 +108,7 @@ export function UsernameModal({ visible, onComplete }: UsernameModalProps) {
               <Text style={styles.welcomeEmoji}>🎮</Text>
               <Text style={styles.title}>{"YUXA'ya Hoş Geldin!"}</Text>
               <Text style={styles.subtitle}>
-                Lider tablosunda görünecek kullanıcı adını seç
+                Skor tablosunda görünecek kısa bir kullanıcı adı seç
               </Text>
             </View>
 
@@ -128,7 +128,7 @@ export function UsernameModal({ visible, onComplete }: UsernameModalProps) {
                 <Text style={styles.errorText}>{error}</Text>
               ) : (
                 <Text style={styles.helperText}>
-                  3-15 karakter, harf, rakam ve alt çizgi
+                  3-15 karakter: harf, rakam veya alt çizgi (_)
                 </Text>
               )}
             </View>
@@ -155,7 +155,7 @@ export function UsernameModal({ visible, onComplete }: UsernameModalProps) {
             <View style={styles.infoBox}>
               <Text style={styles.infoEmoji}>💡</Text>
               <Text style={styles.infoText}>
-                Kullanıcı adın tüm oyuncular tarafından görülecek
+                Kullanıcı adın sadece skor tablosunda görüntülenir
               </Text>
             </View>
           </View>
